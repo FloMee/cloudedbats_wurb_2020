@@ -11,6 +11,9 @@ import pathlib
 import psutil
 from collections import deque
 import sounddevice
+#import os
+import glob
+import shutil
 
 
 # CloudedBats.
@@ -630,6 +633,48 @@ class WurbRecorder(wurb_rec.SoundStreamManager):
         except Exception as e:
             # Logging error.
             message = "Recorder: sound_target_worker: " + str(e)
+            self.wurb_manager.wurb_logging.error(message, short_message=message)
+        finally:
+            pass
+    
+    async def sound_classify_worker(self):
+        target_path = self.wurb_manager.wurb_rpi.get_wavefile_target_dir_path()
+        analyzed_path = self.wurb_manager.wurb_rpi.get_wavefile_analyzed_dir_path()
+        try:
+            while True:
+                try:                  
+                    if target_path.exists():
+                        files = glob.glob(str(target_path) + "/*.wav")
+                        if len(files) == 0:
+                            print("Keine Audiodateien zur Analyse")
+                            return
+                        else:                            
+                            for file in files:
+                                if not analyzed_path.exists():
+                                    analyzed_path.mkdir()
+                                print("Audiodatei " + file +" wird analysiert")
+                                proc = await asyncio.create_subprocess_exec("BatClassify", file,
+                                    stdin=asyncio.subprocess.PIPE, stdout=asyncio.subprocess.PIPE)
+                                
+                                stdout, stderr = await proc.communicate()
+                            
+                                print(f'[BatClassify exited with {proc.returncode}]')
+                                if stdout:
+                                    print(f'[stdout]\n{stdout.decode()}')
+                                    shutil.move(file, str(analyzed_path)+"/"+file.split(sep="/")[-1])
+                                if stderr:
+                                    print(f'[stderr]\n{stderr.decode()}')
+
+
+                except Exception as e:
+                    message = "Recorder: sound_classify_worker: " + str(e)
+                    self.wurb_manager.wurb_logging.error(message, short_message=message)
+                finally:
+                    #self.to_target_queue.task_done()
+                    await asyncio.sleep(30)
+
+        except Exception as e:
+            message = "Recorder: sound_classify_worker: " + str(e)
             self.wurb_manager.wurb_logging.error(message, short_message=message)
         finally:
             pass

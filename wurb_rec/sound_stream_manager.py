@@ -32,6 +32,7 @@ class SoundStreamManager(object):
             self.source_task = None
             self.process_task = None
             self.target_task = None
+            self.classify_task = None
         except Exception as e:
             print("Exception: SoundStreamManager: clear:", e)
 
@@ -42,6 +43,7 @@ class SoundStreamManager(object):
             self.source_task = asyncio.create_task(self.sound_source_worker())
             self.process_task = asyncio.create_task(self.sound_process_worker())
             self.target_task = asyncio.create_task(self.sound_target_worker())
+            self.classify_task = asyncio.create_task(self.sound_classify_worker())
         except Exception as e:
             print("Exception: SoundStreamManager: start_streaming:", e)
 
@@ -56,11 +58,15 @@ class SoundStreamManager(object):
                     self.process_task.cancel()
                 if self.target_task:
                     self.target_task.cancel()
+                if self.classify_task:
+                    self.classify_task.cancel()
             else:
                 # Stop source only and let process and target
                 # finish their work.
                 if self.source_task:
                     self.source_task.cancel()
+                if self.classify_task:
+                    self.classify_task.cancel()
                 await self.from_source_queue.put(None)  # Terminate.
         except Exception as e:
             print("Exception: SoundStreamManager: stop_streaming:", e)

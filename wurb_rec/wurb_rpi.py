@@ -137,6 +137,10 @@ class WurbRaspberryPi(object):
         dir_path = pathlib.Path("wurb_files", file_directory)
         return dir_path
 
+    def get_wavefile_analyzed_dir_path(self):
+        target_dir_path = self.get_wavefile_target_dir_path()
+        return pathlib.Path(target_dir_path, "analyzed")
+
     def is_os_raspbian(self):
         """ Check OS version for Raspberry Pi. """
         if self.os_raspbian is not None:
