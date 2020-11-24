@@ -29,6 +29,7 @@ class SoundStreamManager(object):
         try:
             self.from_source_queue = asyncio.Queue(maxsize=self.queue_max_size)
             self.to_target_queue = asyncio.Queue(maxsize=self.queue_max_size)
+            self.to_classify_queue = asyncio.Queue(maxsize=self.queue_max_size)
             self.source_task = None
             self.process_task = None
             self.target_task = None

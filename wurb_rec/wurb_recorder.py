@@ -14,6 +14,7 @@ import sounddevice
 #import os
 import glob
 import shutil
+import json
 
 
 # CloudedBats.
@@ -619,7 +620,9 @@ class WurbRecorder(wurb_rec.SoundStreamManager):
                             if item["status"] == "close_file":
                                 if wave_file_writer:
                                     wave_file_writer.close()
+                                    wave_filename = wave_file_writer.filename
                                     wave_file_writer = None
+                                    await self.to_classify_queue.put(wave_filename)
                     finally:
                         self.to_target_queue.task_done()
                         await asyncio.sleep(0)
@@ -642,36 +645,40 @@ class WurbRecorder(wurb_rec.SoundStreamManager):
         analyzed_path = self.wurb_manager.wurb_rpi.get_wavefile_analyzed_dir_path()
         try:
             while True:
-                try:                  
-                    if target_path.exists():
-                        files = glob.glob(str(target_path) + "/*.wav")
-                        if len(files) == 0:
-                            print("Keine Audiodateien zur Analyse")
-                            return
-                        else:                            
-                            for file in files:
-                                if not analyzed_path.exists():
-                                    analyzed_path.mkdir()
-                                print("Audiodatei " + file +" wird analysiert")
-                                proc = await asyncio.create_subprocess_exec("BatClassify", file,
-                                    stdin=asyncio.subprocess.PIPE, stdout=asyncio.subprocess.PIPE)
-                                
-                                stdout, stderr = await proc.communicate()
+                try:
+                    item = await self.to_classify_queue.get()
+                    try:
+                        print(item)
+                        if target_path.exists():
+                            if not analyzed_path.exists():
+                                analyzed_path.mkdir()
+                              
+                            print("Audiodatei {} wird analysiert".format(item))
+                            filepath = str(target_path) + "/" + item
+                            proc = await asyncio.create_subprocess_exec("BatClassify", filepath,
+                                stdin=asyncio.subprocess.PIPE, stdout=asyncio.subprocess.PIPE)
                             
-                                print(f'[BatClassify exited with {proc.returncode}]')
-                                if stdout:
-                                    print(f'[stdout]\n{stdout.decode()}')
-                                    shutil.move(file, str(analyzed_path)+"/"+file.split(sep="/")[-1])
-                                if stderr:
-                                    print(f'[stderr]\n{stderr.decode()}')
-
+                            stdout, stderr = await proc.communicate()
+                            stdout = json.loads(stdout)
+                            print(f'[BatClassify exited with {proc.returncode}]')
+                            if stdout:
+                                print(stdout)
+                                #print(f'[stdout]\n{stdout.decode()}')
+                                shutil.move(filepath, str(analyzed_path)+"/"+item)
+                            if stderr:
+                                print(stderr)
+                                print(f'[stderr]\n{stderr.decode()}')
+                    except Exception as e:
+                        message = "Recorder: sound_classify_worker: " + str(e)
+                        self.wurb_manager.wurb_logging.error(message, short_message=message)
+                    finally:
+                        self.to_classify_queue.task_done
 
                 except Exception as e:
                     message = "Recorder: sound_classify_worker: " + str(e)
                     self.wurb_manager.wurb_logging.error(message, short_message=message)
-                finally:
-                    #self.to_target_queue.task_done()
-                    await asyncio.sleep(30)
+                finally:                    
+                    await asyncio.sleep(10)
 
         except Exception as e:
             message = "Recorder: sound_classify_worker: " + str(e)
@@ -693,6 +700,7 @@ class WaveFileWriter:
         self.wurb_rpi = wurb_manager.wurb_rpi
         self.rec_target_dir_path = None
         self.wave_file = None
+        self.filename = None
         # self.size_counter = 0
 
     def create(self, start_time, max_peak_freq_hz, max_peak_dbfs):
@@ -732,6 +740,7 @@ class WaveFileWriter:
         filename += rec_type_str
         filename += peak_info_str
         filename += ".wav"
+        self.filename = filename
 
         # Create directories.
         if not self.rec_target_dir_path.exists():
