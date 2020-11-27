@@ -16,3 +16,4 @@ from .wurb_recorder_m500 import WurbRecorderM500
 from .wurb_scheduler import WurbScheduler
 from .wurb_manager import WurbRecManager
 from .api_app import app
+from .wurb_database import WurbDatabase

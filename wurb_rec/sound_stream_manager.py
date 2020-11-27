@@ -30,10 +30,12 @@ class SoundStreamManager(object):
             self.from_source_queue = asyncio.Queue(maxsize=self.queue_max_size)
             self.to_target_queue = asyncio.Queue(maxsize=self.queue_max_size)
             self.to_classify_queue = asyncio.Queue(maxsize=self.queue_max_size)
+            self.to_database_queue = asyncio.Queue(maxsize=self.queue_max_size)
             self.source_task = None
             self.process_task = None
             self.target_task = None
             self.classify_task = None
+            self.database_task = None
         except Exception as e:
             print("Exception: SoundStreamManager: clear:", e)
 
@@ -45,6 +47,7 @@ class SoundStreamManager(object):
             self.process_task = asyncio.create_task(self.sound_process_worker())
             self.target_task = asyncio.create_task(self.sound_target_worker())
             self.classify_task = asyncio.create_task(self.sound_classify_worker())
+            self.database_task = asyncio.create_task(self.sound_database_worker())
         except Exception as e:
             print("Exception: SoundStreamManager: start_streaming:", e)
 
@@ -61,13 +64,17 @@ class SoundStreamManager(object):
                     self.target_task.cancel()
                 if self.classify_task:
                     self.classify_task.cancel()
+                if self.database_task:
+                    self.database_task.cancel()
             else:
                 # Stop source only and let process and target
                 # finish their work.
                 if self.source_task:
                     self.source_task.cancel()
-                if self.classify_task:
+                if self.classify_task:              # hier müsste das ganze noch geändert werden !
                     self.classify_task.cancel()
+                if self.database_task:
+                    self.database_task.cancel()
                 await self.from_source_queue.put(None)  # Terminate.
         except Exception as e:
             print("Exception: SoundStreamManager: stop_streaming:", e)

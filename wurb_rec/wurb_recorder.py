@@ -15,6 +15,8 @@ import sounddevice
 import glob
 import shutil
 import json
+import pexpect as p
+import sqlite3 as sq3
 
 
 # CloudedBats.
@@ -644,6 +646,11 @@ class WurbRecorder(wurb_rec.SoundStreamManager):
         target_path = self.wurb_manager.wurb_rpi.get_wavefile_target_dir_path()
         analyzed_path = self.wurb_manager.wurb_rpi.get_wavefile_analyzed_dir_path()
         try:
+            proc = p.spawn("BatClassify", timeout=None)
+            print("process BatClassify started")            
+            
+            # waiting 30 seconds to be sure models for batclassify are loaded
+            await asyncio.sleep(30)
             while True:
                 try:
                     item = await self.to_classify_queue.get()
@@ -651,40 +658,83 @@ class WurbRecorder(wurb_rec.SoundStreamManager):
                         print(item)
                         if target_path.exists():
                             if not analyzed_path.exists():
-                                analyzed_path.mkdir()
-                              
-                            print("Audiodatei {} wird analysiert".format(item))
-                            filepath = str(target_path) + "/" + item
-                            proc = await asyncio.create_subprocess_exec("BatClassify", filepath,
-                                stdin=asyncio.subprocess.PIPE, stdout=asyncio.subprocess.PIPE)
+                                analyzed_path.mkdir()                             
                             
-                            stdout, stderr = await proc.communicate()
+                            filepath = str(target_path) + "/" + item
+                            proc.expect('file')   
+                            proc.sendline(filepath)
+                            print("Audiodatei {} wird analysiert".format(item))                            
+                            proc.expect('done')
+                            print('expected donequit')
+                            stdout = proc.before.decode().split(sep='\n')[1]                          
                             stdout = json.loads(stdout)
-                            print(f'[BatClassify exited with {proc.returncode}]')
-                            if stdout:
-                                print(stdout)
-                                #print(f'[stdout]\n{stdout.decode()}')
-                                shutil.move(filepath, str(analyzed_path)+"/"+item)
-                            if stderr:
-                                print(stderr)
-                                print(f'[stderr]\n{stderr.decode()}')
+                            stdout.update({'filepath': filepath})
+
+                            await self.to_database_queue.put([item.split('_')[1], stdout])
+                            
+                            
                     except Exception as e:
                         message = "Recorder: sound_classify_worker: " + str(e)
                         self.wurb_manager.wurb_logging.error(message, short_message=message)
                     finally:
                         self.to_classify_queue.task_done
 
+
+                except asyncio.CancelledError:
+                    proc.close()
+                    break
                 except Exception as e:
                     message = "Recorder: sound_classify_worker: " + str(e)
                     self.wurb_manager.wurb_logging.error(message, short_message=message)
-                finally:                    
+                    
+                finally:                                        
                     await asyncio.sleep(10)
 
         except Exception as e:
             message = "Recorder: sound_classify_worker: " + str(e)
             self.wurb_manager.wurb_logging.error(message, short_message=message)
         finally:
+            proc.close()
+
+
+    async def sound_database_worker(self):
+        target_path = self.wurb_manager.wurb_rpi.get_wavefile_target_dir_path()
+        analyzed_path = self.wurb_manager.wurb_rpi.get_wavefile_analyzed_dir_path()
+        database = self.wurb_manager.wurb_database
+        try:
+            while True:
+                try:
+                    item = await self.to_database_queue.get()
+                    datetime = item[0]
+                    item = item[1]
+                    item.update({'datetime': datetime})
+                    try:
+                        shutil.move(item["filepath"], str(analyzed_path)+"/"+item["filepath"].split("/")[-1])
+                        print('audiofile verschoben')
+                        await database.insert_data(item)
+                            
+                    except Exception as e:
+                        message = "Recorder: sound_database_worker: " + str(e)
+                        self.wurb_manager.wurb_logging.error(message, short_message=message)
+                    finally:
+                        self.to_database_queue.task_done                   
+
+
+                except asyncio.CancelledError:                   
+                    break
+                except Exception as e:
+                    message = "Recorder: sound_database_worker: " + str(e)
+                    self.wurb_manager.wurb_logging.error(message, short_message=message)
+                    
+                finally:                                        
+                    await asyncio.sleep(1)
+
+        except Exception as e:
+            message = "Recorder: sound_database_worker: " + str(e)
+            self.wurb_manager.wurb_logging.error(message, short_message=message)
+        finally:
             pass
+            
 
 
 class WaveFileWriter:
