@@ -597,6 +597,7 @@ class WurbRecorder(wurb_rec.SoundStreamManager):
                     try:
                         if item == None:
                             # Terminated by process.
+                            self.to_classify_queue.put(None)
                             break
                         elif item == False:
                             await self.remove_items_from_queue(self.to_target_queue)
@@ -646,38 +647,42 @@ class WurbRecorder(wurb_rec.SoundStreamManager):
         target_path = self.wurb_manager.wurb_rpi.get_wavefile_target_dir_path()
         analyzed_path = self.wurb_manager.wurb_rpi.get_wavefile_analyzed_dir_path()
         try:
-            proc = p.spawn("BatClassify", timeout=None)
-            print("process BatClassify started")            
-            
-            # waiting 30 seconds to be sure models for batclassify are loaded
-            await asyncio.sleep(30)
+            proc = p.spawn("BatClassify", timeout=None)           
+            # waiting 40 seconds to be sure models for batclassify are loaded
+            await asyncio.sleep(40)
+            message = "Process BatClassify started"
+            self.wurb_logging.info(message, short_message=message)
             while True:
                 try:
                     item = await self.to_classify_queue.get()
-                    try:
-                        print(item)
-                        if target_path.exists():
-                            if not analyzed_path.exists():
-                                analyzed_path.mkdir()                             
-                            
-                            filepath = str(target_path) + "/" + item
-                            proc.expect('file')   
-                            proc.sendline(filepath)
-                            print("Audiodatei {} wird analysiert".format(item))                            
-                            proc.expect('done')
-                            print('expected donequit')
-                            stdout = proc.before.decode().split(sep='\n')[1]                          
-                            stdout = json.loads(stdout)
-                            stdout.update({'filepath': filepath})
+                    if item == None:
+                        self.to_database_queue.put(None)
+                        break
+                    else:
+                        try:
+                            #print(item)
+                            if target_path.exists():
+                                if not analyzed_path.exists():
+                                    analyzed_path.mkdir()                             
+                                
+                                filepath = str(target_path) + "/" + item
+                                proc.expect('inputfile:')   
+                                proc.sendline(filepath)
+                                message = "Audiodatei {} wird analysiert".format(item)
+                                self.wurb_manager.wurb_logging.info(message, short_message = message)                            
+                                proc.expect('\n')
+                                #print('expected donequit')
+                                stdout = proc.before.decode().split(sep='\n')[1]                          
+                                stdout = json.loads(stdout)
+                                stdout.update({'filepath': filepath})
 
-                            await self.to_database_queue.put([item.split('_')[1], stdout])
-                            
-                            
-                    except Exception as e:
-                        message = "Recorder: sound_classify_worker: " + str(e)
-                        self.wurb_manager.wurb_logging.error(message, short_message=message)
-                    finally:
-                        self.to_classify_queue.task_done
+                                await self.to_database_queue.put([item.split('_')[1], stdout])                                
+                                
+                        except Exception as e:
+                            message = "Recorder: sound_classify_worker: " + str(e)
+                            self.wurb_manager.wurb_logging.error(message, short_message=message)
+                        finally:
+                            self.to_classify_queue.task_done
 
 
                 except asyncio.CancelledError:
@@ -696,7 +701,6 @@ class WurbRecorder(wurb_rec.SoundStreamManager):
         finally:
             proc.close()
 
-
     async def sound_database_worker(self):
         target_path = self.wurb_manager.wurb_rpi.get_wavefile_target_dir_path()
         analyzed_path = self.wurb_manager.wurb_rpi.get_wavefile_analyzed_dir_path()
@@ -705,19 +709,24 @@ class WurbRecorder(wurb_rec.SoundStreamManager):
             while True:
                 try:
                     item = await self.to_database_queue.get()
-                    datetime = item[0]
-                    item = item[1]
-                    item.update({'datetime': datetime})
-                    try:
-                        shutil.move(item["filepath"], str(analyzed_path)+"/"+item["filepath"].split("/")[-1])
-                        print('audiofile verschoben')
-                        await database.insert_data(item)
+                    if item == None:
+                        break
+                    else:
+                        datetime = item[0]
+                        item = item[1]
+                        item.update({'datetime': datetime})
+                        try:
+                            shutil.move(item["filepath"], str(analyzed_path)+"/"+item["filepath"].split("/")[-1])
                             
-                    except Exception as e:
-                        message = "Recorder: sound_database_worker: " + str(e)
-                        self.wurb_manager.wurb_logging.error(message, short_message=message)
-                    finally:
-                        self.to_database_queue.task_done                   
+                            await database.insert_data(item)                            
+                            message = "Discrimination-Data for {} moved to database".format(item["filepath"].split("/")[-1])
+                            self.wurb_manager.wurb_logging.info(message, short_message = message)
+
+                        except Exception as e:
+                            message = "Recorder: sound_database_worker: " + str(e)
+                            self.wurb_manager.wurb_logging.error(message, short_message=message)
+                        finally:
+                            self.to_database_queue.task_done                   
 
 
                 except asyncio.CancelledError:                   
