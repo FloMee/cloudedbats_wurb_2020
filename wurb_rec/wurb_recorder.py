@@ -671,12 +671,11 @@ class WurbRecorder(wurb_rec.SoundStreamManager):
                                 message = "Audiodatei {} wird analysiert".format(item)
                                 self.wurb_manager.wurb_logging.info(message, short_message = message)                            
                                 proc.expect('\n')
-                                #print('expected donequit')
                                 stdout = proc.before.decode().split(sep='\n')[1]                          
                                 stdout = json.loads(stdout)
                                 stdout.update({'filepath': filepath})
 
-                                await self.to_database_queue.put([item.split('_')[1], stdout])                                
+                                await self.to_database_queue.put([item, stdout])                                
                                 
                         except Exception as e:
                             message = "Recorder: sound_classify_worker: " + str(e)
@@ -712,7 +711,7 @@ class WurbRecorder(wurb_rec.SoundStreamManager):
                     if item == None:
                         break
                     else:
-                        datetime = item[0]
+                        datetime = item[0].split('_')[1]
                         item = item[1]
                         item.update({'datetime': datetime})
                         try:
