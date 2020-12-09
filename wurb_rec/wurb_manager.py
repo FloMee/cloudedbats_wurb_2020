@@ -76,6 +76,9 @@ class WurbRecManager(object):
             if self.wurb_settings:
                 await self.wurb_settings.shutdown()
                 self.wurb_settings = None
+            if self.wurb_gps:
+                await self.wurb_gps.shutdown()
+                self.wurb_gps = None
             if self.update_status_task:
                 self.update_status_task.cancel()
                 self.update_status_task = None

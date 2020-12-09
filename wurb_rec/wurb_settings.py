@@ -83,7 +83,8 @@ class WurbSettings(object):
     async def shutdown(self):
         """ """
         # GPS.
-        await self.wurb_manager.wurb_gps.shutdown()
+        pass        
+        #await self.wurb_manager.wurb_gps.shutdown()
 
     async def save_rec_mode(self, rec_mode):
         """ """
