@@ -85,6 +85,8 @@ class WurbRecManager(object):
             if self.wurb_logging:
                 await self.wurb_logging.shutdown()
                 self.wurb_logging = None
+            if self.wurb_database:
+                await self.wurb_database.close()
         except Exception as e:
             # Logging error.
             message = "Manager: shutdown:" + str(e)
@@ -130,7 +132,6 @@ class WurbRecManager(object):
             await self.wurb_recorder.set_rec_status("")
             await self.wurb_recorder.stop_streaming(stop_immediate=True)
             await self.ultrasound_devices.reset_devices()
-            await self.wurb_database.close()
         except Exception as e:
             # Logging error.
             message = "Manager: start_rec: " + str(e)
