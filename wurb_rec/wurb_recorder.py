@@ -17,6 +17,8 @@ import shutil
 import json
 import pexpect as p
 import sqlite3 as sq3
+import guano
+import datetime
 
 
 # CloudedBats.
@@ -671,7 +673,8 @@ class WurbRecorder(wurb_rec.SoundStreamManager):
                                 message = "Audiodatei {} wird analysiert".format(item)
                                 self.wurb_manager.wurb_logging.info(message, short_message = message)                            
                                 proc.expect('\n')
-                                stdout = proc.before.decode().split(sep='\n')[1]                          
+                                proc.expect('\n')
+                                stdout = proc.before.decode()                      
                                 stdout = json.loads(stdout)
                                 stdout.update({'filepath': filepath})
 
@@ -704,6 +707,16 @@ class WurbRecorder(wurb_rec.SoundStreamManager):
         target_path = self.wurb_manager.wurb_rpi.get_wavefile_target_dir_path()
         analyzed_path = self.wurb_manager.wurb_rpi.get_wavefile_analyzed_dir_path()
         database = self.wurb_manager.wurb_database
+        #Metadata
+        metadata = await self.wurb_settings.get_settings()
+        location = await self.wurb_settings.get_location()
+        #deviceName, samplingFreq = self.wurb_manager.ultrasound_devices.get_connected_device()
+        #status_dict = await self.wurb_manager.get_status_dict
+        metadata.update({'deviceName': self.device_name, 'Samplerate': self.sampling_freq_hz})
+        #metadata.update(status_dict)
+        metadata.update(location)
+        print(metadata)
+        
         try:
             while True:
                 try:
@@ -711,9 +724,27 @@ class WurbRecorder(wurb_rec.SoundStreamManager):
                     if item == None:
                         break
                     else:
-                        datetime = item[0].split('_')[1]
+                        dtime = item[0].split('_')[1]
                         item = item[1]
-                        item.update({'datetime': datetime})
+                        item.update({'datetime': dtime})
+                        #set metadata
+                        try:
+                            g = guano.GuanoFile(item["filepath"])
+                            g["Filter HP"] = int(metadata["detection_limit"])
+                            g["Length"] = int(metadata["rec_length_s"])
+                            # if metadata["geo_source_option"] == "geo-usb-gps":
+                            #     g["Loc Position"] = metadata[""]
+                            # if metadata["geo_source_option"] == "geo-manual"
+                            #     g["Loc Position"] = metadata[""]
+                            g["Original Filename"] = item["filepath"].split("/")[-1]
+                            g["Timestamp"] = datetime.datetime.strptime(item["datetime"], "%Y%m%dT%H%M%S%z")
+                            
+                            g.write()
+                        except Exception as e:
+                            message = "Guano Metadata error: " + str(e)
+                            self.wurb_logging.error(message, short_message=message)
+                
+                        #move and database entry
                         try:
                             shutil.move(item["filepath"], str(analyzed_path)+"/"+item["filepath"].split("/")[-1])
                             
