@@ -35,6 +35,7 @@ class WurbRecManager(object):
             self.wurb_gps = None
             self.wurb_scheduler = None
             self.wurb_database = None
+            self.wurb_metadata = None
 
         except Exception as e:
             print("Exception: ", e)
@@ -51,6 +52,7 @@ class WurbRecManager(object):
             self.wurb_scheduler = wurb_rec.WurbScheduler(self)
             self.update_status_task = asyncio.create_task(self.update_status())
             self.wurb_database = wurb_rec.WurbDatabase(self)
+            self.wurb_metadata = wurb_rec.WurbMetadata(self)
             await self.wurb_logging.startup()
             await self.wurb_settings.startup()
             # await self.wurb_scheduler.startup()
@@ -106,6 +108,9 @@ class WurbRecManager(object):
             sampling_freq_hz = self.ultrasound_devices.sampling_freq_hz
             if (len(device_name) > 1) and sampling_freq_hz > 0:
                 await self.wurb_recorder.set_device(device_name, sampling_freq_hz)
+                
+                # set metadata for this session
+                await self.wurb_metadata.set_settingMetadata()
                 await self.wurb_recorder.start_streaming()
                 # Logging.
                 message = "Rec. started."

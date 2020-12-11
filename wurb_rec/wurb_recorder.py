@@ -662,7 +662,6 @@ class WurbRecorder(wurb_rec.SoundStreamManager):
                         break
                     else:
                         try:
-                            #print(item)
                             if target_path.exists():
                                 if not analyzed_path.exists():
                                     analyzed_path.mkdir()                             
@@ -670,15 +669,15 @@ class WurbRecorder(wurb_rec.SoundStreamManager):
                                 filepath = str(target_path) + "/" + item
                                 proc.expect('inputfile:')   
                                 proc.sendline(filepath)
-                                message = "Audiodatei {} wird analysiert".format(item)
+                                message = "Analysing sound file..."
+                                #message = "Audiodatei {} wird analysiert".format(item)
                                 self.wurb_manager.wurb_logging.info(message, short_message = message)                            
                                 proc.expect('\n')
                                 proc.expect('\n')
                                 stdout = proc.before.decode()                      
                                 stdout = json.loads(stdout)
-                                stdout.update({'filepath': filepath})
 
-                                await self.to_database_queue.put([item, stdout])                                
+                                await self.to_database_queue.put({"filename": item, "batclassify": stdout, "filepath": filepath})                           
                                 
                         # except Exception as e:
                         #     message = "Recorder: sound_classify_worker: " + str(e)
@@ -710,14 +709,17 @@ class WurbRecorder(wurb_rec.SoundStreamManager):
         analyzed_path = self.wurb_manager.wurb_rpi.get_wavefile_analyzed_dir_path()
         database = self.wurb_manager.wurb_database
         #Metadata
-        metadata = await self.wurb_settings.get_settings()
-        location = await self.wurb_settings.get_location()
-        #deviceName, samplingFreq = self.wurb_manager.ultrasound_devices.get_connected_device()
-        #status_dict = await self.wurb_manager.get_status_dict
-        metadata.update({'deviceName': self.device_name, 'Samplerate': self.sampling_freq_hz})
-        #metadata.update(status_dict)
-        metadata.update(location)
-        print(metadata)
+        # metadata = await self.wurb_settings.get_settings()
+        # location = await self.wurb_settings.get_location()
+        # metadata.update({'deviceName': self.device_name, 'Samplerate': self.sampling_freq_hz})
+        # metadata.update(location)
+        # # {'rec_mode': 'rec-mode-manual', 'file_directory': 'recorded_files',
+        # #  'filename_prefix': 'wurb', 'detection_limit': 18.0, 'detection_sensitivity': -50.0,
+        # #  'detection_algorithm': 'detection-simple', 'rec_length_s': '6', 'rec_type': 'FS',
+        # #  'scheduler_start_event': 'on-sunset', 'scheduler_start_adjust': -15.0, 'scheduler_stop_event': 'off-sunrise',
+        # #  'scheduler_stop_adjust': 15.0, 'scheduler_post_action': 'post-none', 'scheduler_post_action_delay': 5.0,
+        # #  'deviceName': 'UltraMic384K 16bit r0', 'Samplerate': 384000, 'geo_source_option': 'geo-manual',
+        # #  'latitude_dd': 0.0, 'longitude_dd': 0.0, 'manual_latitude_dd': 0.0, 'manual_longitude_dd': 0.0}
         
         try:
             while True:
@@ -726,32 +728,22 @@ class WurbRecorder(wurb_rec.SoundStreamManager):
                     if item == None:
                         break
                     else:
-                        dtime = item[0].split('_')[1]
-                        item = item[1]
+                        # extract datatime String from filename
+                        dtime = item["filename"].split('_')[1]
                         item.update({'datetime': dtime})
-                        #set metadata
-                        try:
-                            g = guano.GuanoFile(item["filepath"])
-                            g["Filter HP"] = int(metadata["detection_limit"])
-                            g["Length"] = int(metadata["rec_length_s"])
-                            # if metadata["geo_source_option"] == "geo-usb-gps":
-                            #     g["Loc Position"] = metadata[""]
-                            # if metadata["geo_source_option"] == "geo-manual"
-                            #     g["Loc Position"] = metadata[""]
-                            g["Original Filename"] = item["filepath"].split("/")[-1]
-                            g["Timestamp"] = datetime.datetime.strptime(item["datetime"], "%Y%m%dT%H%M%S%z")
+                        
+                        # adding metadata to soundfile                     
+                        await self.wurb_manager.wurb_metadata.append_settingMetadata(item["filepath"])                            
+                        bat, prob = await self.wurb_manager.wurb_metadata.append_fileMetadata(item)
                             
-                            g.write()
-                        except Exception as e:
-                            message = "Guano Metadata error: " + str(e)
-                            self.wurb_logging.error(message, short_message=message)
-                
-                        #move and database entry
+                        #move file and do database entry
                         try:
-                            shutil.move(item["filepath"], str(analyzed_path)+"/"+item["filepath"].split("/")[-1])
+                            shutil.move(item["filepath"], str(analyzed_path)+"/"+item["filename"])
                             
-                            await database.insert_data(item)                            
-                            message = "Discrimination-Data for {} moved to database".format(item["filepath"].split("/")[-1])
+                            await database.insert_data(item)
+                            #message = "{} mit {:3.1f}%-iger Wahrscheinlichkeit detectiert".format(bat, prob*100)
+                            message = "{} detected, probability: {:1.2f}%".format(bat, prob)
+                            #message = "Discrimination-Data for {} moved to database".format(item["filename"])
                             self.wurb_manager.wurb_logging.info(message, short_message = message)
 
                         except Exception as e:

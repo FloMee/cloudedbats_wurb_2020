@@ -50,11 +50,12 @@ class WurbDatabase(object):
             Bbar, Malc, Mbec, MbraMmys, Mdau,
             Mnat, NSL, Paur, Ppip, Ppyg, Rfer,
             Rhip) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)''',[data['filepath'], data['datetime'],
-            data['Bbar'], data['Malc'], data['Mbec'], data['MbraMmys'], data['Mdau'],
-            data['Mnat'], data['NSL'], data['Paur'], data['Ppip'], data['Ppyg'], data['Rfer'],
-            data['Rhip']])
+            data['batclassify']['Bbar'], data['batclassify']['Malc'], data['batclassify']['Mbec'], data['batclassify']['MbraMmys'], data['batclassify']['Mdau'],
+            data['batclassify']['Mnat'], data['batclassify']['NSL'], data['batclassify']['Paur'], data['batclassify']['Ppip'], data['batclassify']['Ppyg'], data['batclassify']['Rfer'],
+            data['batclassify']['Rhip']])
         except Exception as err:
-            print(err)
+            message = "Database Input Error: " +err
+            self.wurb_manager.wurb_logging.error(message, short_message=message)
         finally:
             self.conn.commit()
 

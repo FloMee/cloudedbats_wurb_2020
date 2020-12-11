@@ -17,3 +17,4 @@ from .wurb_scheduler import WurbScheduler
 from .wurb_manager import WurbRecManager
 from .api_app import app
 from .wurb_database import WurbDatabase
+from .wurb_metadata import WurbMetadata
