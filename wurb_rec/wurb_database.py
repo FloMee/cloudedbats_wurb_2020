@@ -24,35 +24,22 @@ class WurbDatabase(object):
             self.conn = sqlite3.connect(self.database_path)
             self.c = self.conn.cursor()
             self.c.execute('''CREATE TABLE audiofiles
-            (id INTEGER PRIMARY KEY AUTOINCREMENT,
-            filepath text NOT NULL,
+            (filepath text NOT NULL,
             datetime text NOT NULL,
-            Bbar real,
-            Malc real,
-            Mbec real,
-            MbraMmys real,
-            Mdau real,
-            Mnat real,
-            NSL real,
-            Paur real,
-            Ppip real,
-            Ppyg real,
-            Rfer real,
-            Rhip real)''')
+            auto_batid text,
+            auto_id_prob real)''')
 
         else: 
             self.conn = sqlite3.connect(self.database_path)
             self.c = self.conn.cursor()
+
+        message = "Sound_database: Database setup completed"
+        self.wurb_manager.wurb_logging.debug(message, short_message=message)
     
-    async def insert_data(self, data):
+    async def insert_data(self, data, bat, prob):
         try:
             self.c.execute('''INSERT INTO audiofiles (filepath, datetime,
-            Bbar, Malc, Mbec, MbraMmys, Mdau,
-            Mnat, NSL, Paur, Ppip, Ppyg, Rfer,
-            Rhip) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)''',[data['filepath'], data['datetime'],
-            data['batclassify']['Bbar'], data['batclassify']['Malc'], data['batclassify']['Mbec'], data['batclassify']['MbraMmys'], data['batclassify']['Mdau'],
-            data['batclassify']['Mnat'], data['batclassify']['NSL'], data['batclassify']['Paur'], data['batclassify']['Ppip'], data['batclassify']['Ppyg'], data['batclassify']['Rfer'],
-            data['batclassify']['Rhip']])
+            auto_batid, auto_id_prob) VALUES (?,?,?,?)''',[data['filepath'], data['datetime'], bat, prob])
         except Exception as err:
             message = "Database Input Error: " +err
             self.wurb_manager.wurb_logging.error(message, short_message=message)

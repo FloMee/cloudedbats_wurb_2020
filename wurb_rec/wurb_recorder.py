@@ -725,22 +725,36 @@ class WurbRecorder(wurb_rec.SoundStreamManager):
             while True:
                 try:
                     item = await self.to_database_queue.get()
+                    message = "Sound_database_worker: got item from queue"
+                    self.wurb_manager.wurb_logging.debug(message, short_message=message)
                     if item == None:
+                        message = "Sound_database_worker: terminated with item: None"
+                        self.wurb_manager.wurb_logging.debug(message, short_message=message)
                         break
                     else:
                         # extract datatime String from filename
+                        
                         dtime = item["filename"].split('_')[1]
                         item.update({'datetime': dtime})
+                        
+
+                        message = "Sound_database_worker: extracted datetime from item"
+                        self.wurb_manager.wurb_logging.debug(message, short_message=message)
                         
                         # adding metadata to soundfile                     
                         await self.wurb_manager.wurb_metadata.append_settingMetadata(item["filepath"])                            
                         bat, prob = await self.wurb_manager.wurb_metadata.append_fileMetadata(item)
-                            
+                        print(item)
+                        print(bat, prob)
+                        
+                        message = "Sound_database_worker: added metadata to soundfile"
+                        self.wurb_manager.wurb_logging.debug(message, short_message=message)
+
                         #move file and do database entry
                         try:
                             shutil.move(item["filepath"], str(analyzed_path)+"/"+item["filename"])
                             
-                            await database.insert_data(item)
+                            await database.insert_data(item, bat, prob)
                             #message = "{} mit {:3.1f}%-iger Wahrscheinlichkeit detectiert".format(bat, prob*100)
                             message = "{} detected, probability: {:1.2f}%".format(bat, prob)
                             #message = "Discrimination-Data for {} moved to database".format(item["filename"])
@@ -761,7 +775,9 @@ class WurbRecorder(wurb_rec.SoundStreamManager):
                     
                 finally:                                        
                     await asyncio.sleep(1)
-
+        
+        except asyncio.CancelledError:                   
+            pass
         except Exception as e:
             message = "Recorder: sound_database_worker: " + str(e)
             self.wurb_manager.wurb_logging.error(message, short_message=message)
