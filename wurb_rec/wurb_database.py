@@ -49,5 +49,11 @@ class WurbDatabase(object):
     async def close(self):
         self.conn.close()
 
+    async def get_db(self):
+        return self.conn
+
+    async def get_cursor(self):
+        return self.c
+
 
 

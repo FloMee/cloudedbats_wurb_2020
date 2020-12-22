@@ -13,6 +13,16 @@ from fastapi.templating import Jinja2Templates
 from pydantic import BaseModel
 import websockets.exceptions
 
+import dash
+import dash_core_components as dcc
+import dash_html_components as html
+import pandas as pd
+import plotly.express as px
+
+import sqlite3
+
+from starlette.middleware.wsgi import WSGIMiddleware
+
 # CloudedBats.
 import wurb_rec
 
@@ -23,6 +33,9 @@ app = fastapi.FastAPI(
 )
 
 app.mount("/static", StaticFiles(directory="wurb_rec/static"), name="static")
+
+dashAPP = dash.Dash(requests_pathname_prefix="/dash/")
+app.mount("/dash", WSGIMiddleware(dashAPP.server))
 templates = Jinja2Templates(directory="wurb_rec/templates")
 
 # CloudedBats.
@@ -53,6 +66,27 @@ class DetectorSettings(BaseModel):
     scheduler_post_action: str = None
     scheduler_post_action_delay: float = None
 
+
+query = "SELECT auto_batid as bat, count(auto_batid) as amount FROM audiofiles GROUP BY auto_batid"
+
+db = sqlite3.connect('/home/pi/wurb_files/recorded_files/wurb_data.db')
+data= pd.read_sql_query(query, db)
+fig = px.bar(data, x = 'bat', y = 'amount')
+dashAPP.layout = html.Div(children=[
+    html.H1(children='Hello Dash'),
+    html.Div(children = "Trying to do something"),
+    dcc.Graph(id = 'example', figure = fig)
+])
+
+@app.get("/get_bat_data/")
+async def bat_data():
+    query = "SELECT auto_batid as bat, count(auto_batid) as amount FROM audiofiles GROUP BY auto_batid"
+    global wurb_rec_manager
+    c = await wurb_rec_manager.wurb_database.get_cursor()
+    result = c.execute(query)
+    bat_data = [dict(zip([key[0] for key in c.description], row)) for row in result]
+
+    return bat_data
 
 @app.on_event("startup")
 async def startup_event():

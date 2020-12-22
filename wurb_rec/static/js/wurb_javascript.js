@@ -47,6 +47,8 @@ window.onload = function () {
   const settings_reset_button_id = document.getElementById("settings_reset_button_id");
   const settings_default_button_id = document.getElementById("settings_default_button_id");
 
+
+  
   // Update stored location and settings.
   getLocation()
   getSettings()
@@ -58,7 +60,61 @@ window.onload = function () {
   ws_url += window.location.host // Note: Host includes port.
   ws_url += "/ws";
   startWebsocket(ws_url);
+  drawBarChart();
+  
 };
+
+
+//Solution with Chart.js
+
+async function drawBarChart() {
+  const batdata = await getBatData2();
+  const ctx = document.getElementById('Mychart').getContext('2d');
+  const myChart = new Chart(ctx, {
+    type: 'bar',
+    data: {
+        labels: batdata.bats,
+        datasets: [{
+            label: 'Number of detected bats per species',
+            data: batdata.amount,
+            backgroundColor: 'rgba(39, 147, 218, 0.8)',
+            borderColor: 'rgba(39, 147, 218, 1)',
+            borderWidth: 1
+        }]
+    },
+    options: {
+      scales: {
+          yAxes: [{
+              ticks: {
+                  beginAtZero: true,
+                  precision: 0,
+              }
+          }]
+      }
+  }
+});
+return myChart;
+}
+// Solution with D3
+async function graph() {
+  const batData = await getBatData();
+  const xScale = d3.scaleBand().domain(batData.map(d => d.bat)).rangeRound([0,250]).padding(0.1);
+  const yScale = d3.scaleLinear().domain([0, 15]).range([0, 200]);
+
+  const container = d3.select('svg')
+    .classed('container', true);
+
+  const bars = container
+    .selectAll('.bar')
+    .data(batData)
+    .enter()
+    .append('rect')
+    .classed('bar', true)
+    .attr('width', xScale.bandwidth())
+    .attr('height', (data) => 200 - yScale(data.amount))
+    .attr('x', data => xScale(data.bat))
+    .attr('y', data => yScale(data.amount));
+  }
 
 function hideDivision(div_id) {
   if (div_id != 'undefined') {
@@ -247,6 +303,35 @@ async function saveLocation() {
     console.log(err);
   };
 };
+
+async function getBatData() {
+  try {
+    let response = await fetch("/get_bat_data/")
+    let batData = await response.json();
+    console.log(batData)
+    return batData
+  } catch (err) {
+    console.log(err)
+  }
+}
+
+async function getBatData2() {
+  try {
+    const bats = []
+    const amount = []
+    let response = await fetch("/get_bat_data/")
+    let batData = await response.json();
+    for (var i=0; i<batData.length; i++){
+      bats.push(batData[i].bat);
+      amount.push(batData[i].amount);
+    }
+    console.log(batData)
+    return {bats, amount}
+  } catch (err) {
+    console.log(err)
+  }
+}
+
 
 async function getLocation() {
   try {

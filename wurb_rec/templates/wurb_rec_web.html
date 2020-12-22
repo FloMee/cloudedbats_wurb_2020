@@ -12,9 +12,12 @@
     <!-- <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.8.0/css/bulma.min.css"> -->
     <!-- <script defer src="https://use.fontawesome.com/releases/v5.3.1/js/all.js"></script> -->
     <link rel="stylesheet" href="{{ url_for('static', path='css/bulma-0.8-min.css') }}">
+    <script src="https://d3js.org/d3.v6.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@2.9.4/dist/Chart.min.js"></script>
     <!-- CloudedBats -->
     <link href="{{ url_for('static', path='css/wurb_styles.css') }}" rel="stylesheet">
     <script src="{{ url_for('static', path='js/wurb_javascript.js/?v=10') }}"></script>
+
 </head>
 
 <body>
@@ -22,6 +25,18 @@
         <div class="container">
             <div class="tile is-ancestor">
                 <div class="tile is-vertical">
+                    <!--<div class = "tile">
+                        <div class="tile is-parent is-vertical">
+                           
+                        </div>
+                        <div class="tile is-parent is-vertical">
+                            <article class="tile is-child box has-background-grey-lighter">
+                                <p>hier schreib ich jetzt einfach mal was rein</p>
+                                <svg id='graph'>
+                                </svg>
+                            </article>
+                        <div>    
+                    </div> -->
                     <div class="tile">
                         <div class="tile is-parent is-vertical">
 
@@ -138,6 +153,10 @@
                                         Set time
                                     </button>
                                 </div>
+                            </article>
+                             <article class="tile is-child box has-background-grey-lighter">                             
+                                <canvas id='Mychart' width='400px' height='400px'></canvas>
+                                
                             </article>
                         </div>
                         <div class="tile is-parent">
