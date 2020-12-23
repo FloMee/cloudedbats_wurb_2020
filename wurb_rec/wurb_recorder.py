@@ -173,6 +173,42 @@ class WurbRecorder(wurb_rec.SoundStreamManager):
         self.rec_length_s = 6  # Unit: sec.
         self.rec_timeout_before_restart_s = 30  # Unit: sec.
 
+        self.bat_detected_event = None
+        self.bat_data = {}
+
+
+    async def get_bat_data(self):
+        try:            
+            return self.bat_data
+
+        except Exception as e:
+            messsage = "Recorder: get_bat_data: " +  str(e)
+            self.wurb_manager.wurb_logging.error(message, short_message=message)
+
+    async def set_bat_data(self, bat, amount = 1):
+        try:
+            self.bat_data = {"bat": bat, "amount": amount}
+            # Create a new event and release all from the old event.
+            old_bat_detected_event = self.bat_detected_event
+            self.bat_detected_event = asyncio.Event()
+            if old_bat_detected_event:
+                old_bat_detected_event.set()
+
+        except Exception as e:
+            messsage = "Recorder: set_bat_data: " +  str(e)
+            self.wurb_manager.wurb_logging.error(message, short_message=message)
+        
+
+    async def get_bat_detected_event(self):
+        """"""
+        try:
+            if self.bat_detected_event == None:
+                self.bat_detected_event = asyncio.Event()
+            return self.bat_detected_event
+        except Exception as e:
+            messsage = "Recorder: bat_detected_event: " +  str(e)
+            self.wurb_manager.wurb_logging.error(message, short_message=message)
+
     async def get_notification_event(self):
         """ """
         try:
@@ -744,8 +780,7 @@ class WurbRecorder(wurb_rec.SoundStreamManager):
                         # adding metadata to soundfile                     
                         await self.wurb_manager.wurb_metadata.append_settingMetadata(item["filepath"])                            
                         bat, prob = await self.wurb_manager.wurb_metadata.append_fileMetadata(item)
-                        print(item)
-                        print(bat, prob)
+                        print(bat)
                         
                         message = "Sound_database_worker: added metadata to soundfile"
                         self.wurb_manager.wurb_logging.debug(message, short_message=message)
@@ -760,6 +795,7 @@ class WurbRecorder(wurb_rec.SoundStreamManager):
                             #message = "Discrimination-Data for {} moved to database".format(item["filename"])
                             self.wurb_manager.wurb_logging.info(message, short_message = message)
 
+                            await self.set_bat_data(bat)
                         except Exception as e:
                             message = "Recorder: sound_database_worker: " + str(e)
                             self.wurb_manager.wurb_logging.error(message, short_message=message)

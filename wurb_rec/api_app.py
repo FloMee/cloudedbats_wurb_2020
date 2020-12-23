@@ -311,6 +311,7 @@ async def websocket_endpoint(websocket: fastapi.WebSocket):
         latlong_changed_notification = await wurb_settings.get_latlong_event()
         settings_changed_notification = await wurb_settings.get_settings_event()
         logging_changed_notification = await wurb_logging.get_logging_event()
+        bat_detected_notification = await wurb_rec_manager.wurb_recorder.get_bat_detected_event()
         # Update client.
         ws_json = {}
         status_dict = await wurb_rec_manager.get_status_dict()
@@ -335,6 +336,7 @@ async def websocket_endpoint(websocket: fastapi.WebSocket):
                 latlong_changed_notification.wait(),
                 settings_changed_notification.wait(),
                 logging_changed_notification.wait(),
+                bat_detected_notification.wait(),
             ]
             await asyncio.wait(events, return_when=asyncio.FIRST_COMPLETED)
 
@@ -359,6 +361,11 @@ async def websocket_endpoint(websocket: fastapi.WebSocket):
             if logging_changed_notification.is_set():
                 logging_changed_notification = await wurb_logging.get_logging_event()
                 ws_json["log_rows"] = await wurb_logging.get_client_messages()
+
+            # update chart data
+            if bat_detected_notification.is_set():
+                bat_detected_notification = await wurb_rec_manager.wurb_recorder.get_bat_detected_event()
+                ws_json["bat_detected"] = await wurb_rec_manager.wurb_recorder.get_bat_data()
             # Send to client.
             await websocket.send_json(ws_json)
 

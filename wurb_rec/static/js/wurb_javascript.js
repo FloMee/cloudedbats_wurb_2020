@@ -125,15 +125,15 @@ async function graph() {
     .attr('y', data => yScale(data.amount));
   }
 
-function updateGraph(bat, amount) {
-  const bat_idx = mychart.data['labels'].indexOf(bat)
+function updateGraph(bat_detected) {
+  const bat_idx = mychart.data['labels'].indexOf(bat_detected.bat)
   if (bat_idx == -1) {
     // bat not yet in graph --> add
-    mychart.data['labels'].push(bat)
+    mychart.data['labels'].push(bat_detected.bat)
     //console.log(amount)
-    mychart.data.datasets[0].data.push(amount)
+    mychart.data.datasets[0].data.push(bat_detected.amount)
   } else {
-    mychart.data.datasets[0].data[bat_idx] += amount
+    mychart.data.datasets[0].data[bat_idx] += bat_detected.amount
   }
 
   mychart.update()
@@ -148,7 +148,7 @@ async function getPathData(bat) {
       .data(pathData)
       .enter()
       .append('li')//, value: data => data.filepath)
-      .text(data => data.filepath + data.prob)
+      .text(data => ("filepath: " + data.filepath +" Probability: " + data.prob))
   } catch (err) {
     console.log(err)
   }
@@ -563,8 +563,9 @@ function startWebsocket(ws_url) {
       updateLogTable(data_json.log_rows)
       console.log(data_json)
     }
-    // hier müsste dann eine neue Geschichte ergänzt werden
-    // if ("bats" in data_json === true) {updateGraph(data_json.bats)}
+    if ("bat_detected" in data_json === true) 
+      {updateGraph(data_json.bat_detected)
+    }
   }
   ws.onclose = function () {
     // Try to reconnect in 5th seconds. Will continue...
