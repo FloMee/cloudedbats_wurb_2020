@@ -785,10 +785,12 @@ class WurbRecorder(wurb_rec.SoundStreamManager):
                         message = "Sound_database_worker: added metadata to soundfile"
                         self.wurb_manager.wurb_logging.debug(message, short_message=message)
 
-                        #move file and do database entry
                         try:
+                            # move file to "analyzed path"
                             shutil.move(item["filepath"], str(analyzed_path)+"/"+item["filename"])
-                            
+                            # update filepath in item
+                            item.update({"filepath": str(analyzed_path)+"/"+item["filename"]})
+
                             await database.insert_data(item, bat, prob)
                             #message = "{} mit {:3.1f}%-iger Wahrscheinlichkeit detectiert".format(bat, prob*100)
                             message = "{} detected, probability: {:1.2f}%".format(bat, prob)
