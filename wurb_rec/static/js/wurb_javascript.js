@@ -1,5 +1,5 @@
 
-window.onload = function () {
+window.onload = async function () {
   // Define global variables.
 
   // Recording unit tile.
@@ -60,7 +60,7 @@ window.onload = function () {
   ws_url += window.location.host // Note: Host includes port.
   ws_url += "/ws";
   startWebsocket(ws_url);
-  drawBarChart();
+  mychart = await drawBarChart();
   
 };
 
@@ -90,8 +90,17 @@ async function drawBarChart() {
                   precision: 0,
               }
           }]
-      }
-  }
+      },
+      tooltips: {
+        displayColors: false,
+      },
+      onClick: (evt, item) => {
+        let index = item[0]["_index"];
+        let bat = item[0]["_chart"].data.labels[index];
+        getPathData(bat);
+        let amount = item[0]["_chart"].data.datasets[0].data[index];
+    }
+  },
 });
 return myChart;
 }
@@ -115,6 +124,39 @@ async function graph() {
     .attr('x', data => xScale(data.bat))
     .attr('y', data => yScale(data.amount));
   }
+
+function updateGraph(bat, amount) {
+  const bat_idx = mychart.data['labels'].indexOf(bat)
+  if (bat_idx == -1) {
+    // bat not yet in graph --> add
+    mychart.data['labels'].push(bat)
+    //console.log(amount)
+    mychart.data.datasets[0].data.push(amount)
+  } else {
+    mychart.data.datasets[0].data[bat_idx] += amount
+  }
+
+  mychart.update()
+}
+
+async function getPathData(bat) {
+  try {
+    let response = await fetch("/get_path_data/")
+    let pathData = await response.json();
+    d3.select('#pathlist')
+      .selectAll('li')
+      .data(pathData)
+      .enter()
+      .append('li')//, value: data => data.filepath)
+      .text(data => data.filepath + data.prob)
+  } catch (err) {
+    console.log(err)
+  }
+}
+
+function changeStyle() {
+  d3.selectAll('p').style('font-size', Math.random()* 30 + 'px');
+}
 
 function hideDivision(div_id) {
   if (div_id != 'undefined') {
@@ -503,11 +545,13 @@ function startWebsocket(ws_url) {
   let ws = new WebSocket(ws_url);
   ws.onmessage = function (event) {
     let data_json = JSON.parse(event.data);
+    
     if ("status" in data_json === true) {
       updateStatus(data_json.status)
     }
     if ("location" in data_json === true) {
       updateLocation(data_json.location)
+      
     }
     if ("latlong" in data_json === true) {
       updateLatLong(data_json.latlong)
@@ -517,7 +561,10 @@ function startWebsocket(ws_url) {
     }
     if ("log_rows" in data_json === true) {
       updateLogTable(data_json.log_rows)
+      console.log(data_json)
     }
+    // hier müsste dann eine neue Geschichte ergänzt werden
+    // if ("bats" in data_json === true) {updateGraph(data_json.bats)}
   }
   ws.onclose = function () {
     // Try to reconnect in 5th seconds. Will continue...

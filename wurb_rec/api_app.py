@@ -88,6 +88,16 @@ async def bat_data():
 
     return bat_data
 
+@app.get("/get_path_data/")
+async def bat_data():
+    query = "SELECT filepath, auto_id_prob as prob FROM audiofiles WHERE auto_batid LIKE 'Mnat'"
+    global wurb_rec_manager
+    c = await wurb_rec_manager.wurb_database.get_cursor()
+    result = c.execute(query)
+    bat_data = [dict(zip([key[0] for key in c.description], row)) for row in result]
+
+    return bat_data
+
 @app.on_event("startup")
 async def startup_event():
     """ """
