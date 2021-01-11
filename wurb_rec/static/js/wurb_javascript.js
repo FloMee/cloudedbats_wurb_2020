@@ -95,15 +95,83 @@ async function drawBarChart() {
         displayColors: false,
       },
       onClick: (evt, item) => {
-        let index = item[0]["_index"];
-        let bat = item[0]["_chart"].data.labels[index];
-        getPathData(bat);
-        let amount = item[0]["_chart"].data.datasets[0].data[index];
-    }
-  },
-});
+        if (item[0]) {
+          let index = item[0]["_index"];
+          let bat = item[0]["_chart"].data.labels[index];
+          getPathData(bat);
+          let amount = item[0]["_chart"].data.datasets[0].data[index];
+        }
+      }
+    },
+  });
 return myChart;
 }
+
+async function drawScatterPlot() {
+  const scatterData = await getScatterData();
+  const ctx = document.getElementById('ScatterPlot').getContext('2d');
+  const myChart = new Chart(ctx, {
+    type: 'line',
+    data: {
+        labels: scatterData.dates,
+        datasets: [{
+            label: 'Number of detected bats per day',
+            data: scatterData.amount,
+            fill : false,
+            showLine: false,
+            backgroundColor: 'rgba(39, 147, 218, 0.8)',
+            borderColor: 'rgba(39, 147, 218, 1)',       
+        }]
+    },
+    options: {
+      scales: {
+          yAxes: [{
+              ticks: {
+                  beginAtZero: true,
+                  precision: 0,
+              }
+          }]
+      },
+    },   
+  });
+return myChart;
+}
+
+async function drawStackedBarChart() {
+  const scatterData = await getScatterData();
+  const ctx = document.getElementById('ScatterPlot').getContext('2d');
+  const myChart = new Chart(ctx, {
+    type: 'bar',
+    data: {
+        labels: scatterData.dates,
+        datasets: [{
+            label: 'Number of detected bats per day',
+            data: scatterData.amount,
+            fill : false,
+            showLine: false,
+            backgroundColor: 'rgba(39, 147, 218, 0.8)',
+            borderColor: 'rgba(39, 147, 218, 1)',                  
+        }],
+        stack: scatterData.bat,
+    },
+    options: {
+      scales: {
+          yAxes: [{
+              ticks: {
+                  beginAtZero: true,
+                  precision: 0,
+              },
+              stacked: true
+          }],
+          xAxes: [{
+              stacked: true
+          }]
+      },
+    },   
+  });
+return myChart;
+}
+
 // Solution with D3
 async function graph() {
   const batData = await getBatData();
@@ -141,14 +209,20 @@ function updateGraph(bat_detected) {
 
 async function getPathData(bat) {
   try {
-    let response = await fetch("/get_path_data/")
+    let response = await fetch("/get_path_data/"+bat)
     let pathData = await response.json();
     d3.select('#pathlist')
       .selectAll('li')
-      .data(pathData)
+      .data(pathData, data => data.filepath)
       .enter()
-      .append('li')//, value: data => data.filepath)
-      .text(data => ("filepath: " + data.filepath +" Probability: " + data.prob))
+      .append('li')
+      .text(data => ("filepath: " + data.filepath +" Probability: " + data.prob));
+    d3.select('#pathlist')
+      .selectAll('li')
+      .data(pathData, data => data.filepath)
+      .exit()
+      .remove();
+
   } catch (err) {
     console.log(err)
   }
@@ -374,6 +448,25 @@ async function getBatData2() {
   }
 }
 
+async function getScatterData() {
+  try {
+    const dates = []
+    const amount = []
+    const bat = []
+    let response = await fetch("/get_scatter_data/")
+    let scatterData = await response.json();
+    console.log(scatterData)
+    for (var i=0; i<scatterData.length; i++){
+      dates.push(scatterData[i].date);
+      amount.push(scatterData[i].amount);
+      bat.push(scatterData[i].bat);
+    }
+    console.log(scatterData)
+    return {dates, amount}
+  } catch (err) {
+    console.log(err)
+  }
+}
 
 async function getLocation() {
   try {

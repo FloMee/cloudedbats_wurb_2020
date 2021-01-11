@@ -13,12 +13,6 @@ from fastapi.templating import Jinja2Templates
 from pydantic import BaseModel
 import websockets.exceptions
 
-import dash
-import dash_core_components as dcc
-import dash_html_components as html
-import pandas as pd
-import plotly.express as px
-
 import sqlite3
 
 from starlette.middleware.wsgi import WSGIMiddleware
@@ -34,8 +28,6 @@ app = fastapi.FastAPI(
 
 app.mount("/static", StaticFiles(directory="wurb_rec/static"), name="static")
 
-dashAPP = dash.Dash(requests_pathname_prefix="/dash/")
-app.mount("/dash", WSGIMiddleware(dashAPP.server))
 templates = Jinja2Templates(directory="wurb_rec/templates")
 
 # CloudedBats.
@@ -67,36 +59,57 @@ class DetectorSettings(BaseModel):
     scheduler_post_action_delay: float = None
 
 
-query = "SELECT auto_batid as bat, count(auto_batid) as amount FROM audiofiles GROUP BY auto_batid"
-
-db = sqlite3.connect('/home/pi/wurb_files/recorded_files/wurb_data.db')
-data= pd.read_sql_query(query, db)
-fig = px.bar(data, x = 'bat', y = 'amount')
-dashAPP.layout = html.Div(children=[
-    html.H1(children='Hello Dash'),
-    html.Div(children = "Trying to do something"),
-    dcc.Graph(id = 'example', figure = fig)
-])
-
 @app.get("/get_bat_data/")
 async def bat_data():
     query = "SELECT auto_batid as bat, count(auto_batid) as amount FROM audiofiles GROUP BY auto_batid"
     global wurb_rec_manager
     c = await wurb_rec_manager.wurb_database.get_cursor()
-    result = c.execute(query)
-    bat_data = [dict(zip([key[0] for key in c.description], row)) for row in result]
+    if c is not None:
+        result = c.execute(query)
+        bat_data = [dict(zip([key[0] for key in c.description], row)) for row in result]
 
-    return bat_data
+        return bat_data
+    else:
+        return 0
 
-@app.get("/get_path_data/")
-async def bat_data():
-    query = "SELECT filepath, auto_id_prob as prob FROM audiofiles WHERE auto_batid LIKE 'Mnat'"
+@app.get("/get_all_bat_data/")
+async def all_bat_data():
+    query = "SELECT * FROM audiofiles"
     global wurb_rec_manager
     c = await wurb_rec_manager.wurb_database.get_cursor()
-    result = c.execute(query)
-    bat_data = [dict(zip([key[0] for key in c.description], row)) for row in result]
+    if c is not None:
+        result = c.execute(query)
+        bat_data = [dict(zip([key[0] for key in c.description], row)) for row in result]
 
-    return bat_data
+        return bat_data
+    else:
+        return 0 
+
+@app.get("/get_path_data/{bat}")
+async def path_data(bat):
+    bats = ["Bbar","Malc","Mbec", "MbraMmys","Mdau","Mnat","NSL","Paur","Ppip","Ppyg","Rfer","Rhip"]
+    if bat in bats:
+        query = "SELECT filepath, auto_id_prob as prob FROM audiofiles WHERE auto_batid LIKE '{}'".format(bat) + 'ORDER BY auto_id_prob DESC'
+        global wurb_rec_manager
+        c = await wurb_rec_manager.wurb_database.get_cursor()
+        result = c.execute(query)
+        bat_data = [dict(zip([key[0] for key in c.description], row)) for row in result]
+
+        return bat_data
+    else: 
+        return
+
+@app.get('/get_scatter_data/')
+async def get_scatter_data():
+    query = 'SELECT date(datetime) as date, auto_batid as bat, count(filepath) as amount from audiofiles GROUP BY date(datetime), auto_batid'
+    global wurb_rec_manager
+    c = await wurb_rec_manager.wurb_database.get_cursor()
+    if c is not None:
+        result = c.execute(query)
+        scatter_data = [dict(zip([key[0] for key in c.description], row)) for row in result]
+        return scatter_data
+    else:
+        return 0
 
 @app.on_event("startup")
 async def startup_event():
@@ -118,7 +131,7 @@ async def shutdown_event():
     try:
         global wurb_rec_manager
         # Logging debug.
-        wurb_rec_manager.wurb_logging.debug(message="API called: startup.")
+        wurb_rec_manager.wurb_logging.debug(message="API called: shutdown.")
         await wurb_rec_manager.shutdown()
     except Exception as e:
         # Logging error.
