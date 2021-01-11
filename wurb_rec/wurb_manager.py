@@ -137,6 +137,7 @@ class WurbRecManager(object):
             await self.wurb_recorder.set_rec_status("")
             await self.wurb_recorder.stop_streaming(stop_immediate=True)
             await self.ultrasound_devices.reset_devices()
+            await self.wurb_database.commitChanges()
         except Exception as e:
             # Logging error.
             message = "Manager: start_rec: " + str(e)
