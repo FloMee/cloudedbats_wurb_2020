@@ -768,9 +768,10 @@ class WurbRecorder(wurb_rec.SoundStreamManager):
                         self.wurb_manager.wurb_logging.debug(message, short_message=message)
                         break
                     else:
-                        # extract datatime String from filename
+                        # extract datatime String from filename and transform dtime to datetimeformat for sqlite
                         
-                        dtime = item["filename"].split('_')[1]
+                        dtime = datetime.datetime.strptime(item["filename"].split('_')[1], "%Y%m%dT%H%M%S%z")
+
                         item.update({'datetime': dtime})
                         
 
@@ -781,10 +782,11 @@ class WurbRecorder(wurb_rec.SoundStreamManager):
                         await self.wurb_manager.wurb_metadata.append_settingMetadata(item["filepath"])                            
                         bat, prob = await self.wurb_manager.wurb_metadata.append_fileMetadata(item)
                         print(bat)
+                        print(item)
                         
                         message = "Sound_database_worker: added metadata to soundfile"
                         self.wurb_manager.wurb_logging.debug(message, short_message=message)
-
+                        print(analyzed_path)
                         try:
                             # move file to "analyzed path"
                             shutil.move(item["filepath"], str(analyzed_path)+"/"+item["filename"])
@@ -793,7 +795,7 @@ class WurbRecorder(wurb_rec.SoundStreamManager):
 
                             await database.insert_data(item, bat, prob)
                             #message = "{} mit {:3.1f}%-iger Wahrscheinlichkeit detectiert".format(bat, prob*100)
-                            message = "{} detected, probability: {:1.2f}%".format(bat, prob)
+                            message = "{} detected, probability: {:1.2f}%".format(bat, prob*100)
                             #message = "Discrimination-Data for {} moved to database".format(item["filename"])
                             self.wurb_manager.wurb_logging.info(message, short_message = message)
 

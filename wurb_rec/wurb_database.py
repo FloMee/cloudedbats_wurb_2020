@@ -3,6 +3,7 @@
 import sqlite3
 import asyncio
 import os
+import json
 
 import wurb_rec
 
@@ -22,13 +23,14 @@ class WurbDatabase(object):
         self.database_path = str(target_path) + '/wurb_data.db'
         if not os.path.isfile(self.database_path):
             self.conn = sqlite3.connect(self.database_path)
-            self.c = self.conn.cursor()
-            self.c.execute('''CREATE TABLE audiofiles
+            c = self.conn.cursor()
+            c.execute('''CREATE TABLE audiofiles
             (filepath text NOT NULL,
             datetime text NOT NULL,
             auto_batid text,
-            auto_id_prob real)''')
-
+            auto_id_prob real,
+            metadata json)''')
+            self.c = c
         else: 
             self.conn = sqlite3.connect(self.database_path)
             self.c = self.conn.cursor()
@@ -39,14 +41,19 @@ class WurbDatabase(object):
     async def insert_data(self, data, bat, prob):
         try:
             self.c.execute('''INSERT INTO audiofiles (filepath, datetime,
-            auto_batid, auto_id_prob) VALUES (?,?,?,?)''',[data['filepath'], data['datetime'], bat, prob])
+            auto_batid, auto_id_prob, metadata) VALUES (?,?,?,?,?)''',[data['filepath'], data['datetime'], bat, prob, json.dumps(data['batclassify'])])
         except Exception as err:
             message = "Database Input Error: " +err
             self.wurb_manager.wurb_logging.error(message, short_message=message)
         finally:
             self.conn.commit()
+            #pass
+
+    async def commitChanges(self):
+        self.conn.commit()
 
     async def close(self):
+        self.conn.commit()
         self.conn.close()
 
     async def get_db(self):

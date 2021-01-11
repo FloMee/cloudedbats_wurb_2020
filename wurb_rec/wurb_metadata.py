@@ -53,7 +53,7 @@ class WurbMetadata(object):
             
             g = guano.GuanoFile(metadata["filepath"])
             g["Original Filename"] = metadata["filename"]
-            g["Timestamp"] = datetime.datetime.strptime(metadata["datetime"], "%Y%m%dT%H%M%S%z")
+            g["Timestamp"] = metadata["datetime"]
             g["Species Auto ID"] = bat
 
             g.write(make_backup=False)
