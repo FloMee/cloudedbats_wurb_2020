@@ -794,9 +794,7 @@ class WurbRecorder(wurb_rec.SoundStreamManager):
                             item.update({"filepath": str(analyzed_path)+"/"+item["filename"]})
 
                             await database.insert_data(item, bat, prob)
-                            #message = "{} mit {:3.1f}%-iger Wahrscheinlichkeit detectiert".format(bat, prob*100)
                             message = "{} detected, probability: {:1.2f}%".format(bat, prob*100)
-                            #message = "Discrimination-Data for {} moved to database".format(item["filename"])
                             self.wurb_manager.wurb_logging.info(message, short_message = message)
 
                             await self.set_bat_data(bat)
