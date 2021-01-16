@@ -61,7 +61,7 @@ window.onload = async function () {
   ws_url += "/ws";
   startWebsocket(ws_url);
   mychart = await drawBarChart();
-  
+  stackedChart = await stackedBarChart();  
 };
 
 
@@ -226,10 +226,6 @@ async function getPathData(bat) {
   } catch (err) {
     console.log(err)
   }
-}
-
-function changeStyle() {
-  d3.selectAll('p').style('font-size', Math.random()* 30 + 'px');
 }
 
 function hideDivision(div_id) {
@@ -419,6 +415,16 @@ async function saveLocation() {
     console.log(err);
   };
 };
+
+async function getAllBatData() {
+  try {
+    let response = await fetch('/get_all_bat_data/')
+    let batData = await response.json();
+    return batData
+  } catch (err) {
+    console.log(err)
+  }
+}
 
 async function getBatData() {
   try {
