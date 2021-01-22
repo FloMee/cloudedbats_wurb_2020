@@ -60,8 +60,20 @@ window.onload = async function () {
   ws_url += window.location.host // Note: Host includes port.
   ws_url += "/ws";
   startWebsocket(ws_url);
+
+  // Initialize graphics
   mychart = await drawBarChart();
   stackedChart = await stackedBarChart();  
+
+  // Initialize Calender input
+
+  const calendarOptions = {isRange: true, color: "info", showHeader: false, showFooter: false, minDate: "01/01/2021", maxDate: Date(), labelFrom: "From", labelTo: "To", dateFormat: "MM-DD-YYYY"};
+  const calendar = bulmaCalendar.attach('[type="date"]', calendarOptions);
+
+  // Calender EventHandler
+
+  const calendarID = document.querySelector('#dateTimePicker');
+  await calendarID.bulmaCalendar.on('hide', d => updateBarChart(d.data.value()));
 };
 
 
@@ -192,6 +204,28 @@ async function graph() {
     .attr('x', data => xScale(data.bat))
     .attr('y', data => yScale(data.amount));
   }
+
+async function updateBarChart(range) {
+  if (range) {
+    // updateData = await getUpdateData(range);
+    // console.log(updateData)
+    // stackedChart.updateData(prepareStackedBatData(updateData))
+    stackedChart.zoomToDateRange(range);
+  } else {
+    console.log('leer')
+  }
+}
+
+async function getUpdateData(range) {
+  try{
+    let response = await fetch("/get_update_data/"+range);
+    let updateData = await response.json();
+    return updateData
+  } catch (err) {
+    console.log(err)
+  }
+
+}
 
 function updateGraph(bat_detected) {
   const bat_idx = mychart.data['labels'].indexOf(bat_detected.bat)

@@ -83,7 +83,7 @@ async def all_bat_data():
 
         return bat_data
     else:
-        return 0 
+        return 0
 
 @app.get("/get_path_data/{bat}")
 async def path_data(bat):
@@ -94,10 +94,29 @@ async def path_data(bat):
         c = await wurb_rec_manager.wurb_database.get_cursor()
         result = c.execute(query)
         bat_data = [dict(zip([key[0] for key in c.description], row)) for row in result]
-
+        
         return bat_data
     else: 
         return
+        
+@app.get("/get_update_data/{range}")
+async def update_data(range):
+    try:
+        s, e = [datetime.datetime.strptime(i, "%m-%d-%Y") for i in range.split(' - ')]
+        #query = "Select date(datetime) from audiofiles"
+        query = "SELECT * FROM audiofiles WHERE DATE(datetime) BETWEEN '{}' AND '{}'".format(s.date(), e.date())
+        print(query)
+        global wurb_rec_manager
+        c = await wurb_rec_manager.wurb_database.get_cursor()
+        result = c.execute(query)
+        bat_data = [dict(zip([key[0] for key in c.description], row)) for row in result]
+
+        return bat_data
+
+    except Exception as e:
+        print(e)
+        return 0
+        
 
 @app.get('/get_scatter_data/')
 async def get_scatter_data():
