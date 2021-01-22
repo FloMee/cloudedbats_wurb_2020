@@ -129,6 +129,7 @@ async function stackedBarChart() {
         .attr("x", (d, i) => x(d.data.date))
         .attr("width", x.bandwidth());
   }
+
   function zoom(svg) {
     const extent = [[margin.left, margin.top], [width - margin.right, height - margin.top]];
   
@@ -148,48 +149,12 @@ async function stackedBarChart() {
     }
   }
 
-  function zoomToDateRange(daterange) {
-    let s = daterange.split(' - ')[0]
-    let e = daterange.split(' - ')[1]
-    let pT = d3.timeParse('%m-%d-%Y')
-    let range = d3.timeDay.range(pT(s), pT(e));
-    let n = series.length;
-    x.domain(range);
-    svg.selectAll(".grouped rect").attr("x", (d, i) => x(d.data.date) + x.bandwidth() / n * d.index).attr("width", x.bandwidth() / n);    
-    svg.selectAll(".stacked rect").attr("x", d => x(d.data.date)).attr("width", x.bandwidth());      
-    svg.selectAll(".x-axis").call(xAxis)
-  }
-
-  function updateData(data) {
-    console.log(rect);
-    console.log(data)
-    rect = rect
-        // .selectAll('g')
-        .data(data, d => d.key)
-        .join('g')
-          .attr('fill', d => color(d.key))
-        .selectAll('rect')    
-        .data(d => d, d => d.data.date)
-        .join('rect')
-          .attr('x', (d, i) => x(d.data.date))
-          .attr('y', d => y(d[1]))
-          .attr('height', d => y(d[0]) - y(d[1]))
-          .attr('width', x.bandwidth())
-          .classed('rects', true)
-          .on('mouseenter', (event, d) => {
-            const key = d.key;
-            d3.selectAll('.rects').filter((d,i) => d.key === key).attr('opacity', '0.4');
-          })
-          .on("mouseleave", () => {rect.attr('opacity', '1')});
-  }
-  console.log(series)
-  //updateData(series);
   function updateStyle(layout) {
     if (layout === "stacked") transitionStacked();
     else transitionGrouped();
   }
 
-  return Object.assign(svg.node(), {updateStyle, zoomToDateRange});      
+  return Object.assign(svg.node(), {updateStyle});      
 }
 
 
