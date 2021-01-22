@@ -19,11 +19,20 @@ async function stackedBarChart() {
   const height = 300;
 
   // define xScale
-  const x = d3.scaleBand()
-              .domain(_.uniq(series.flatMap(d => d.map(d => d.data.date))))
-              .range([margin.left, width - margin.right])
-              .padding(0.1);
+  // const x = d3.scaleBand()
+  //             .domain(_.uniq(series.flatMap(d => d.map(d => d.data.date))))
+  //             .range([margin.left, width - margin.right])
+  //             .padding(0.1);
+  
+  const x = d3.scaleUtc()
+              .domain(d3.extent(_.uniq(series.flatMap(d => d.map(d => d.data.date)))))
+              .range([margin.left, width - margin.right]);
 
+  const daterange = d3.timeDays(x.domain()[0], x.domain()[1])
+  
+  const xBand = d3.scaleBand().domain(daterange)
+                  .range([margin.left, width - margin.right])
+                  .padding(0.1)
   // define yScale
   const y = d3.scaleLinear()
               .domain([0, d3.max(series, d => d3.max(d, d => d[1])) * 1.1])
@@ -35,6 +44,7 @@ async function stackedBarChart() {
           .call(d3.axisBottom(x).tickSizeOuter(0).tickFormat(d3.timeFormat('%d.%m.%Y')))
           .call(g => g.selectAll(".domain").remove());
   }
+  
 
   // define yAxis
   function yAxis(g) {
@@ -82,7 +92,8 @@ async function stackedBarChart() {
       .attr('x', (d, i) => x(d.data.date))
       .attr('y', d => y(d[1]))
       .attr('height', d => y(d[0]) - y(d[1]))
-      .attr('width', x.bandwidth())
+      .attr('width', xBand.bandwidth())
+      //.attr('width', (width-margin.left-margin.right)/x.ticks().length)
       .classed('rects', true)
       .on('mouseenter', (event, d) => {
         const key = d.key;
@@ -109,8 +120,8 @@ async function stackedBarChart() {
     rect.transition()
         .duration(500)
         .delay((d, i) => i * 20)
-        .attr("x", (d, i) => x(d.data.date) + x.bandwidth() / n * d.index)
-        .attr("width", x.bandwidth() / n)
+        .attr("x", (d, i) => x(d.data.date) + xBand.bandwidth() / n * d.index)
+        .attr("width", xBand.bandwidth() / n)
       .transition()
         .attr("y", d => y(d[1] - d[0]))
         .attr("height", d => y(0) - y(d[1] - d[0]));
@@ -127,7 +138,7 @@ async function stackedBarChart() {
         .attr("height", d => y(d[0]) - y(d[1]))
       .transition()
         .attr("x", (d, i) => x(d.data.date))
-        .attr("width", x.bandwidth());
+        .attr("width", xBand.bandwidth());
   }
 
   function zoom(svg) {
@@ -141,11 +152,13 @@ async function stackedBarChart() {
   
     function zoomed(event) {
       let n = series.length;
+      let xz = event.transform.rescaleX(x);
       x.range([margin.left, width - margin.right].map(d => event.transform.applyX(d)));
+      xBand.range([margin.left, width - margin.right].map(d => event.transform.applyX(d)));
       //svg.selectAll(".bars rect").attr("x", d => x(d.data.date)).attr("width", x.bandwidth());
-      svg.selectAll(".grouped rect").attr("x", (d, i) => x(d.data.date) + x.bandwidth() / n * d.index).attr("width", x.bandwidth() / n);    
-      svg.selectAll(".stacked rect").attr("x", d => x(d.data.date)).attr("width", x.bandwidth());
-      svg.selectAll(".x-axis").call(xAxis);
+      svg.selectAll(".grouped rect").attr("x", (d, i) => x(d.data.date) + xBand.bandwidth() / n * d.index).attr("width", xBand.bandwidth() / n);    
+      svg.selectAll(".stacked rect").attr("x", d => x(d.data.date)).attr("width", xBand.bandwidth());
+      svg.selectAll(".x-axis").call(xAxis, xz);
     }
   }
 
