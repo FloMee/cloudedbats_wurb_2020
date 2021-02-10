@@ -1,13 +1,14 @@
 
 
-async function stackedBarChart() {
+async function stackedBarChart(mode = "day") {
   // get width of the div where the svg will be drawn
+  
   const chartDiv = d3.select('#stackedChart')
   const width = chartDiv.node().getBoundingClientRect().width;
   // get raw bat data provided by the database
   const batData = await getAllBatData();
   // transform to stacked data for d3
-  const series = prepareStackedBatData(batData);
+  const series = prepareStackedBatData(batData, mode);
   
   // color Scale
   const color = d3.scaleOrdinal()
@@ -24,11 +25,18 @@ async function stackedBarChart() {
   //             .range([margin.left, width - margin.right])
   //             .padding(0.1);
   
-  const x = d3.scaleUtc()
-              .domain(d3.extent(_.uniq(series.flatMap(d => d.map(d => d.data.date)))))
-              .range([margin.left, width - margin.right]);
+  const x = getX(series, margin, width, mode)
+  
+          // d3.scaleUtc()
+          //     //.domain(d3.extent(_.uniq(series.flatMap(d => d.map(d => d.data.date)))))
+          //     // min date to max date + 1
+          //     .domain([d3.min(_.uniq(series.flatMap(d => d.map(d => d.data.date)))),
+          //        d3.timeDay.offset(d3.max(_.uniq(series.flatMap(d => d.map(d => d.data.date)))), 1)])
+          //     .range([margin.left, width - margin.right]);
 
-  const daterange = d3.timeDays(x.domain()[0], x.domain()[1])
+  const daterange = getDateRange(x, mode)
+  
+  // d3.timeDays(x.domain()[0], x.domain()[1])
   
   const xBand = d3.scaleBand().domain(daterange)
                   .range([margin.left, width - margin.right])
@@ -39,9 +47,9 @@ async function stackedBarChart() {
               .range([height - margin.bottom, margin.top]);
 
   // define xAxis
-  function xAxis(g) {
+  function xAxis(g, xScale) {
       return g.attr("transform", `translate(0,${height - margin.bottom})`)
-          .call(d3.axisBottom(x).tickSizeOuter(0).tickFormat(d3.timeFormat('%d.%m.%Y')))
+          .call(d3.axisBottom(xScale).tickSizeOuter(0))//.tickFormat(d3.timeFormat('%d.%m.%Y')))
           .call(g => g.selectAll(".domain").remove());
   }
   
@@ -104,7 +112,7 @@ async function stackedBarChart() {
   
   svg.append('g')
     .classed('x-axis', true)
-    .call(xAxis);
+    .call(xAxis, x);
   
   svg.append('g')
     .call(yAxis);
@@ -145,8 +153,9 @@ async function stackedBarChart() {
     const extent = [[margin.left, margin.top], [width - margin.right, height - margin.top]];
   
     svg.call(d3.zoom()
-        .scaleExtent([1, series.length])
-        .translateExtent(extent)
+        .scaleExtent([1, daterange.length])
+        //.translateExtent(extent)
+        .translateExtent([[margin.left, -Infinity], [width - margin.right, Infinity]])
         .extent(extent)
         .on("zoom", zoomed));
   
@@ -171,15 +180,25 @@ async function stackedBarChart() {
 }
 
 
-function prepareStackedBatData(data) {    
+function prepareStackedBatData(data, mode) {    
   const parseTime = d3.timeParse('%Y-%m-%d %H:%M:%S%Z');
   // group raw data to by date
-  const d_g_date = _.groupBy(data, d => d3.timeDay(parseTime(d.datetime)));
+  function resol(data, mode) {
+    if (mode == "day") {
+      return d3.timeDay(data);
+    } else if (mode == "hour") {
+      return d3.timeHour(data);
+    } else if (mode == "month") {
+      return d3.timeMonth(data);
+    } 
+  }
+  
+  let d_g_date = _.groupBy(data, d => resol(parseTime(d.datetime), mode))
   
   // transform to array of objects where each objects holds date and number of detected  bats per species
   const d_stacked = _.reduce(d_g_date, function(result, value, key) {
         (result || result[0]).push(
-            Object.assign({date: d3.timeDay(parseTime(value[0].datetime))}, _.countBy(value, d => d.auto_batid))
+              Object.assign({date: resol(parseTime(value[0].datetime), mode)}, _.countBy(value, d => d.auto_batid))
             );
         
         return result;
@@ -196,10 +215,46 @@ function prepareStackedBatData(data) {
   return series
 }
 
+function getDateRange(x, mode) {
+  let daterange;
+  if (mode == "day") {
+    daterange = d3.timeDays(x.domain()[0], x.domain()[1])
+  } else if (mode == "hour") {
+    daterange = d3.timeHours(x.domain()[0], x.domain()[1])
+  } else if (mode == "month") {
+    daterange = d3.timeMonths(x.domain()[0], x.domain()[1])
+  }
+  return daterange;
+}
+
+function getX(series, margin, width, mode) {
+  let x;
+  if (mode == "day") {
+    x = d3.scaleUtc()  
+          .domain([d3.min(_.uniq(series.flatMap(d => d.map(d => d.data.date)))),
+            d3.timeDay.offset(d3.max(_.uniq(series.flatMap(d => d.map(d => d.data.date)))), 1)])
+          .range([margin.left, width - margin.right]);
+  } else if (mode == "hour") {
+    x = d3.scaleUtc()  
+          //.domain([d3.min(_.uniq(series.flatMap(d => d.map(d => d.data.date)))),
+            //d3.timeHour.offset(d3.max(_.uniq(series.flatMap(d => d.map(d => d.data.date)))), 1)])
+           .domain(d3.extent(_.uniq(series.flatMap(d => d.map(d => d.data.date)))))  
+          .range([margin.left, width - margin.right]);
+  } else if (mode == "month") {
+    x = d3.scaleUtc()  
+          .domain([d3.min(_.uniq(series.flatMap(d => d.map(d => d.data.date)))),
+            d3.timeMonth.offset(d3.max(_.uniq(series.flatMap(d => d.map(d => d.data.date)))), 1)])
+          .range([margin.left, width - margin.right]);
+  }
+  return x;
+}
 function changeChartStyle(updateRadio) {
   stackedChart.updateStyle(updateRadio.value);
 }
 
+async function changeChartResolution(resRadio) {
+  stackedChart = await stackedBarChart(resRadio.value)
+}
   // color Legend from https://observablehq.com/@d3/color-legend
 
   function legend({
