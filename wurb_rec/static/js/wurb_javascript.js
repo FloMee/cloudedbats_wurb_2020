@@ -64,7 +64,7 @@ window.onload = async function () {
   startWebsocket(ws_url);
 
   // Initialize graphics
-  mychart = await drawBarChart();
+  // mychart = await drawBarChart();
   stackedChart = await stackedBarChart();  
 
   radio_stack.checked = true;
@@ -526,11 +526,11 @@ function startWebsocket(ws_url) {
     }
     if ("log_rows" in data_json === true) {
       updateLogTable(data_json.log_rows)
-      console.log(data_json)
+      // console.log(data_json)
     }
-    if ("bat_detected" in data_json === true) 
-      {updateGraph(data_json.bat_detected)
-    }
+    // if ("bat_detected" in data_json === true) 
+    //   {updateGraph(data_json.bat_detected)
+    // }
   }
   ws.onclose = function () {
     // Try to reconnect in 5th seconds. Will continue...
