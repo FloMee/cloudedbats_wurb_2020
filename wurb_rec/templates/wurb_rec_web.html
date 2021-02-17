@@ -12,15 +12,13 @@
     <!-- <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.8.0/css/bulma.min.css"> -->
     <!-- <script defer src="https://use.fontawesome.com/releases/v5.3.1/js/all.js"></script> -->
     <link rel="stylesheet" href="{{ url_for('static', path='css/bulma-0.8-min.css') }}">
-    <link rel="stylesheet" href="{{ url_for('static', path='css/bulma-calendar.min.css') }}">
     <!-- libraries for interactive graphics -->
-    <script src="https://d3js.org/d3.v6.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/lodash@4.17.20/lodash.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js@2.9.4/dist/Chart.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/calendarpickerjs@1.2.0"></script>
+    <!--<script src="https://d3js.org/d3.v6.min.js"></script>-->
+    <!--<script src="https://cdn.jsdelivr.net/npm/lodash@4.17.20/lodash.min.js"></script>-->
+    <script src="{{ url_for('static', path='js/d3.min.js/') }}"></script>
+    <script src="{{ url_for('static', path='js/lodash_min.js/') }}"></script>
     <!-- CloudedBats -->
     <link href="{{ url_for('static', path='css/wurb_styles.css') }}?version1" rel="stylesheet">
-    <script src="{{ url_for('static', path='js/bulma-calendar.min.js/?v=10') }}"></script>
     <script src="{{ url_for('static', path='js/wurb_graphics.js/') }}"></script>
     <script src="{{ url_for('static', path='js/wurb_javascript.js/?v=10') }}"></script>
 
@@ -532,7 +530,7 @@
                                 <div class="field-body">
                                     <div class="field">
                                         <div class="control">
-                                            <input class="radio" type="radio" name="chartStyle" onclick="changeChartStyle(this)" value="stacked" checked="checked">
+                                            <input id="radio_stack" class="radio" type="radio" name="chartStyle" onclick="changeChartStyle(this)" value="stacked" checked="checked">
                                         </div>
                                     </div>
                                 </div>        
@@ -564,7 +562,7 @@
                                 <div class="field-body">
                                     <div class="field">
                                         <div class="control">
-                                            <input class="radio" type="radio" name="chartResolution" onclick="changeChartResolution(this)" value="day" checked="checked">
+                                            <input id="radio_day" class="radio" type="radio" name="chartResolution" onclick="changeChartResolution(this)" value="day" checked="checked">
                                         </div>
                                     </div>
                                 </div>

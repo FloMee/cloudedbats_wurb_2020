@@ -20,20 +20,9 @@ async function stackedBarChart(mode = "day") {
   const height = 300;
 
   // define xScale
-  // const x = d3.scaleBand()
-  //             .domain(_.uniq(series.flatMap(d => d.map(d => d.data.date))))
-  //             .range([margin.left, width - margin.right])
-  //             .padding(0.1);
-  
   const x = getX(series, margin, width, mode)
   
-          // d3.scaleUtc()
-          //     //.domain(d3.extent(_.uniq(series.flatMap(d => d.map(d => d.data.date)))))
-          //     // min date to max date + 1
-          //     .domain([d3.min(_.uniq(series.flatMap(d => d.map(d => d.data.date)))),
-          //        d3.timeDay.offset(d3.max(_.uniq(series.flatMap(d => d.map(d => d.data.date)))), 1)])
-          //     .range([margin.left, width - margin.right]);
-
+  //define daterange
   const daterange = getDateRange(x, mode)
   
   // d3.timeDays(x.domain()[0], x.domain()[1])
@@ -49,7 +38,7 @@ async function stackedBarChart(mode = "day") {
   // define xAxis
   function xAxis(g, xScale) {
       return g.attr("transform", `translate(0,${height - margin.bottom})`)
-          .call(d3.axisBottom(xScale).tickSizeOuter(0))//.tickFormat(d3.timeFormat('%d.%m.%Y')))
+          .call(d3.axisBottom(xScale).tickSizeOuter(0).ticks(10))//.tickFormat(d3.timeFormat('%d.%m.%Y')))
           .call(g => g.selectAll(".domain").remove());
   }
   
@@ -154,8 +143,7 @@ async function stackedBarChart(mode = "day") {
   
     svg.call(d3.zoom()
         .scaleExtent([1, daterange.length])
-        //.translateExtent(extent)
-        .translateExtent([[margin.left, -Infinity], [width - margin.right, Infinity]])
+        .translateExtent(extent)
         .extent(extent)
         .on("zoom", zoomed));
   
@@ -228,24 +216,21 @@ function getDateRange(x, mode) {
 }
 
 function getX(series, margin, width, mode) {
-  let x;
-  if (mode == "day") {
-    x = d3.scaleUtc()  
-          .domain([d3.min(_.uniq(series.flatMap(d => d.map(d => d.data.date)))),
-            d3.timeDay.offset(d3.max(_.uniq(series.flatMap(d => d.map(d => d.data.date)))), 1)])
-          .range([margin.left, width - margin.right]);
-  } else if (mode == "hour") {
-    x = d3.scaleUtc()  
-          //.domain([d3.min(_.uniq(series.flatMap(d => d.map(d => d.data.date)))),
-            //d3.timeHour.offset(d3.max(_.uniq(series.flatMap(d => d.map(d => d.data.date)))), 1)])
-           .domain(d3.extent(_.uniq(series.flatMap(d => d.map(d => d.data.date)))))  
-          .range([margin.left, width - margin.right]);
-  } else if (mode == "month") {
-    x = d3.scaleUtc()  
-          .domain([d3.min(_.uniq(series.flatMap(d => d.map(d => d.data.date)))),
-            d3.timeMonth.offset(d3.max(_.uniq(series.flatMap(d => d.map(d => d.data.date)))), 1)])
-          .range([margin.left, width - margin.right]);
+
+  function timeOffset(data, mode) {
+    if (mode == "day") {
+      return d3.timeDay.offset(data, 1);
+    } else if (mode == "hour") {
+      return d3.timeHour.offset(data, 1);
+    } else if (mode == "month") {
+      return d3.timeMonth.offset(data, 1);
+    } 
   }
+ 
+  const x = d3.scaleUtc()  
+              .domain([d3.min(_.uniq(series.flatMap(d => d.map(d => d.data.date)))),
+                timeOffset(d3.max(_.uniq(series.flatMap(d => d.map(d => d.data.date)))), mode)])
+              .range([margin.left, width - margin.right]);
   return x;
 }
 function changeChartStyle(updateRadio) {
@@ -254,6 +239,7 @@ function changeChartStyle(updateRadio) {
 
 async function changeChartResolution(resRadio) {
   stackedChart = await stackedBarChart(resRadio.value)
+  radio_stack.checked = true;  
 }
   // color Legend from https://observablehq.com/@d3/color-legend
 

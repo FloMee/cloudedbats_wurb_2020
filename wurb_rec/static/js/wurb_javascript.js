@@ -47,6 +47,8 @@ window.onload = async function () {
   const settings_reset_button_id = document.getElementById("settings_reset_button_id");
   const settings_default_button_id = document.getElementById("settings_default_button_id");
 
+  const radio_stack = document.getElementById('radio_stack')
+  const radio_day = document.getElementById('radio_day')
 
   
   // Update stored location and settings.
@@ -65,150 +67,11 @@ window.onload = async function () {
   mychart = await drawBarChart();
   stackedChart = await stackedBarChart();  
 
+  radio_stack.checked = true;
+  radio_day.checked = true;
+
   };
 
-
-//Solution with Chart.js
-
-async function drawBarChart() {
-  const batdata = await getBatData2();
-  const ctx = document.getElementById('Mychart').getContext('2d');
-  const myChart = new Chart(ctx, {
-    type: 'bar',
-    data: {
-        labels: batdata.bats,
-        datasets: [{
-            label: 'Number of detected bats per species',
-            data: batdata.amount,
-            backgroundColor: 'rgba(39, 147, 218, 0.8)',
-            borderColor: 'rgba(39, 147, 218, 1)',
-            borderWidth: 1
-        }]
-    },
-    options: {
-      scales: {
-          yAxes: [{
-              ticks: {
-                  beginAtZero: true,
-                  precision: 0,
-              }
-          }]
-      },
-      tooltips: {
-        displayColors: false,
-      },
-      onClick: (evt, item) => {
-        if (item[0]) {
-          let index = item[0]["_index"];
-          let bat = item[0]["_chart"].data.labels[index];
-          getPathData(bat);
-          let amount = item[0]["_chart"].data.datasets[0].data[index];
-        }
-      }
-    },
-  });
-return myChart;
-}
-
-async function drawScatterPlot() {
-  const scatterData = await getScatterData();
-  const ctx = document.getElementById('ScatterPlot').getContext('2d');
-  const myChart = new Chart(ctx, {
-    type: 'line',
-    data: {
-        labels: scatterData.dates,
-        datasets: [{
-            label: 'Number of detected bats per day',
-            data: scatterData.amount,
-            fill : false,
-            showLine: false,
-            backgroundColor: 'rgba(39, 147, 218, 0.8)',
-            borderColor: 'rgba(39, 147, 218, 1)',       
-        }]
-    },
-    options: {
-      scales: {
-          yAxes: [{
-              ticks: {
-                  beginAtZero: true,
-                  precision: 0,
-              }
-          }]
-      },
-    },   
-  });
-return myChart;
-}
-
-async function drawStackedBarChart() {
-  const scatterData = await getScatterData();
-  const ctx = document.getElementById('ScatterPlot').getContext('2d');
-  const myChart = new Chart(ctx, {
-    type: 'bar',
-    data: {
-        labels: scatterData.dates,
-        datasets: [{
-            label: 'Number of detected bats per day',
-            data: scatterData.amount,
-            fill : false,
-            showLine: false,
-            backgroundColor: 'rgba(39, 147, 218, 0.8)',
-            borderColor: 'rgba(39, 147, 218, 1)',                  
-        }],
-        stack: scatterData.bat,
-    },
-    options: {
-      scales: {
-          yAxes: [{
-              ticks: {
-                  beginAtZero: true,
-                  precision: 0,
-              },
-              stacked: true
-          }],
-          xAxes: [{
-              stacked: true
-          }]
-      },
-    },   
-  });
-return myChart;
-}
-
-// Solution with D3
-async function graph() {
-  const batData = await getBatData();
-  const xScale = d3.scaleBand().domain(batData.map(d => d.bat)).rangeRound([0,250]).padding(0.1);
-  const yScale = d3.scaleLinear().domain([0, 15]).range([0, 200]);
-
-  const container = d3.select('svg')
-    .classed('container', true);
-
-  const bars = container
-    .selectAll('.bar')
-    .data(batData)
-    .enter()
-    .append('rect')
-    .classed('bar', true)
-    .attr('width', xScale.bandwidth())
-    .attr('height', (data) => 200 - yScale(data.amount))
-    .attr('x', data => xScale(data.bat))
-    .attr('y', data => yScale(data.amount));
-  }
-
-function updateGraph(bat_detected) {
-  const bat_idx = mychart.data['labels'].indexOf(bat_detected.bat)
-  if (bat_idx == -1) {
-    // bat not yet in graph --> add
-    mychart.data['labels'].push(bat_detected.bat)
-    //console.log(amount)
-    mychart.data.datasets[0].data.push(bat_detected.amount)
-  } else {
-    mychart.data.datasets[0].data[bat_idx] += bat_detected.amount
-  }
-
-  mychart.update()
-}
 
 async function getPathData(bat) {
   try {
