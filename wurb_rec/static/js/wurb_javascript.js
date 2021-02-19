@@ -35,6 +35,7 @@ window.onload = async function () {
   const settings_detection_sensitivity_id = document.getElementById("settings_detection_sensitivity_id");
   const settings_file_directory_id = document.getElementById("settings_file_directory_id");
   const settings_detection_algorithm_id = document.getElementById("settings_detection_algorithm_id");
+  const settings_classification_algorithm_id = document.getElementById("settings_classification_algorithm_id");
   const settings_rec_length_id = document.getElementById("settings_rec_length_id");
   const settings_rec_type_id = document.getElementById("settings_rec_type_id");
   const settings_scheduler_start_event_id = document.getElementById("settings_scheduler_start_event_id");
@@ -384,6 +385,7 @@ async function saveSettings() {
       detection_sensitivity: settings_detection_sensitivity_id.value,
       file_directory: settings_file_directory_id.value,
       detection_algorithm: settings_detection_algorithm_id.value,
+      classification_algorithm: settings_classification_algorithm_id.value,
       rec_length_s: settings_rec_length_id.value,
       rec_type: settings_rec_type_id.value,
       scheduler_start_event: settings_scheduler_start_event_id.value,

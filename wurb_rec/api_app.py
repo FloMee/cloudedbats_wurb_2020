@@ -49,6 +49,7 @@ class DetectorSettings(BaseModel):
     detection_limit: float = None
     detection_sensitivity: float = None
     detection_algorithm: str = None
+    classification_algorithm: str = None
     rec_length_s: str = None
     rec_type: str = None
     scheduler_start_event: str = None

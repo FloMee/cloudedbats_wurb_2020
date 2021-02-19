@@ -45,6 +45,7 @@ class WurbSettings(object):
             "detection_limit": "17.0",
             "detection_sensitivity": "-50",
             "detection_algorithm": "detection-simple",
+            "classification_algorithm": "classification-batclassify",
             "rec_length_s": "6",
             "rec_type": "FS",
             "scheduler_start_event": "on-sunset",

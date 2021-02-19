@@ -633,7 +633,7 @@ class WurbRecorder(wurb_rec.SoundStreamManager):
                 try:
                     item = await self.to_target_queue.get()
                     try:
-                        if item == None:
+                        if self.wurb_settings.get_setting('classification_algorithm') == "classification-batclassify" and item == None:
                             # Terminated by process.
                             self.to_classify_queue.put(None)
                             break
@@ -663,7 +663,8 @@ class WurbRecorder(wurb_rec.SoundStreamManager):
                                     wave_file_writer.close()
                                     wave_filename = wave_file_writer.filename
                                     wave_file_writer = None
-                                    await self.to_classify_queue.put(wave_filename)
+                                    if self.wurb_settings.get_setting('classification_algorithm') == 'classification-batclassify':
+                                        await self.to_classify_queue.put(wave_filename)
                     finally:
                         self.to_target_queue.task_done()
                         await asyncio.sleep(0)

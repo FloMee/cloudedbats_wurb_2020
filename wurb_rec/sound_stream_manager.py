@@ -46,8 +46,10 @@ class SoundStreamManager(object):
             self.source_task = asyncio.create_task(self.sound_source_worker())
             self.process_task = asyncio.create_task(self.sound_process_worker())
             self.target_task = asyncio.create_task(self.sound_target_worker())
-            self.classify_task = asyncio.create_task(self.sound_classify_worker())
-            self.database_task = asyncio.create_task(self.sound_database_worker())
+            print(self.wurb_settings.get_setting("classification_algorithm"))
+            if self.wurb_settings.get_setting("classification_algorithm") == "classification-batclassify":
+                self.classify_task = asyncio.create_task(self.sound_classify_worker())
+                self.database_task = asyncio.create_task(self.sound_database_worker())
         except Exception as e:
             print("Exception: SoundStreamManager: start_streaming:", e)
 
