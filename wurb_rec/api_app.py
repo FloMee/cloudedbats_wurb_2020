@@ -10,10 +10,14 @@ import asyncio
 import fastapi
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
+from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 import websockets.exceptions
 
+
 import sqlite3
+import pandas
+import io
 
 from starlette.middleware.wsgi import WSGIMiddleware
 
@@ -59,6 +63,29 @@ class DetectorSettings(BaseModel):
     scheduler_post_action: str = None
     scheduler_post_action_delay: float = None
 
+
+@app.get("/get_bat_data_as_file/")
+async def bat_data_as_file():
+    query = "SELECT * FROM audiofiles"
+    global wurb_rec_manager
+
+    c = await wurb_rec_manager.wurb_database.get_cursor()
+    if c is not None:
+        c.execute(query)
+        data = c.fetchall()
+        df = pandas.DataFrame(data, columns = [i[0] for i in c.description])
+        stream = io.StringIO()
+        df.to_csv(stream, index = False)
+
+        response = StreamingResponse(iter([stream.getvalue()]),
+                            media_type="text/csv")
+
+        return response
+
+    else:
+        return 0
+
+    
 
 @app.get("/get_bat_data/")
 async def bat_data():
