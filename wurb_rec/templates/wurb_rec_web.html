@@ -247,7 +247,7 @@
                                         <label class="label">Sound&nbsp;detection&nbsp;algorithm</label>
                                         <div class="control">
                                             <div class="select">
-                                                <select id="settings_detection_algorithm_id">
+                                                <select id="settings_detection_algorithm_id" onchange="detection_algorithm_set()">
                                                     <option value="detection-none">None (everything is recorded)
                                                     </option>
                                                     <option value="detection-simple">Simple (single trigging event)
@@ -535,61 +535,43 @@
                         </div>-->
                     </div>
                     <div class="tile is-parent is-vertical">                        
-                        <div class="tile is-child box has-background-grey-lighter">                            
+                        <div class="tile is-child box has-background-grey-lighter"> 
                             <div class="field is-horizontal">
-                                <div class="field-label">
-                                    <label class="label radio">stacked</label>
+                                <div class="field-label is-normal">
+                                    <label class="label">Chart design</label>
                                 </div>
                                 <div class="field-body">
-                                    <div class="field">
+                                    <div class="field is-narrow">
                                         <div class="control">
-                                            <input id="radio_stack" class="radio" type="radio" name="chartStyle" onclick="changeChartStyle(this)" value="stacked" checked="checked">
+                                            <div class="select">
+                                                <select id="design_Option" onchange="changeChartStyle(this)">
+                                                    <option selected value="stacked">stacked
+                                                    </option>
+                                                    <option value="grouped">grouped
+                                                    </option>
+                                                </select>
+                                            </div>
                                         </div>
                                     </div>
-                                </div>        
-                                <div class="field-label">
-                                    <label class="label radio">grouped</label>
-                                </div>
-                                <div class="field-body">
-                                    <div class="field">
-                                        <div class="control">
-                                            <input class="radio" type="radio" name="chartStyle" onclick="changeChartStyle(this)">
-                                        </div>
+                                    <div class="field-label is-normal">
+                                        <label class="label">Chart x-axis resolution</label>
                                     </div>
-                                </div>
-                            </div>
-                            <div class="field is-horizontal">
-                                <div class="field-label">
-                                    <label class="label radio">month</label>
-                                </div>
-                                <div class="field-body">
-                                    <div class="field">
-                                        <div class="control">
-                                            <input class="radio" type="radio" name="chartResolution" onclick="changeChartResolution(this)" value="month">
+                                        <div class="field">
+                                            <div class="control">
+                                                <div class="select">
+                                                    <select id="xRes_Option" onchange="changeChartResolution(this)">
+                                                        <option value="month">month
+                                                        </option>
+                                                        <option selected value="day">day
+                                                        </option>
+                                                        <option value="hour">hour
+                                                        </option>
+                                                    </select>
+                                                </div>
+                                            </div>
                                         </div>
-                                    </div>
-                                </div>        
-                                <div class="field-label">
-                                    <label class="label radio">day</label>
                                 </div>
-                                <div class="field-body">
-                                    <div class="field">
-                                        <div class="control">
-                                            <input id="radio_day" class="radio" type="radio" name="chartResolution" onclick="changeChartResolution(this)" value="day" checked="checked">
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="field-label">
-                                    <label class="label radio">hour</label>
-                                </div>
-                                <div class="field-body">
-                                    <div class="field">
-                                        <div class="control">
-                                            <input class="radio" type="radio" name="chartResolution" onclick="changeChartResolution(this)" value="hour">
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
+                            </div>                            
                             <div class="field" id="stackedChart">
                             </div>
                             <div class="buttons is-centered">
@@ -598,27 +580,7 @@
                                         Download Data
                                     </button>
                             </div>
-                        </div>
-                        <div id = "calendarWrapper">
-                            
-                        </div>
-                        <article class="tile is-child box has-background-grey-lighter" >
-                            <ul id = "pathlist"></ul>
-                        </article>
-                    </div>
-                    <div class="tile">
-                        <div class="tile is-parent is-vertical">
-                            <article class="tile is-child box has-background-grey-lighter">                             
-                                <canvas id='Mychart' width='400px' height='400px'></canvas>
-                                <canvas id='ScatterPlot' width='400px' height='400px'></canvas>
-                            </article>
-                        </div>
-                        <div class="tile is-parent is-vertical">
-
-                            <article class="tile is-child box has-background-grey-lighter pathlist">
-                                                                                              
-                            </article>
-                        </div>           
+                        </div>             
                     </div>         
                     
                     <div class="tile is-parent is-vertical">

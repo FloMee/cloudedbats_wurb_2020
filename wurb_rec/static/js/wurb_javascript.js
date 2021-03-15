@@ -48,13 +48,13 @@ window.onload = async function () {
   const settings_reset_button_id = document.getElementById("settings_reset_button_id");
   const settings_default_button_id = document.getElementById("settings_default_button_id");
 
-  const radio_stack = document.getElementById('radio_stack')
-  const radio_day = document.getElementById('radio_day')
+  //const chartDesign = document.getElementById("design_Option");
+  //const chart_xRes = document.getElementById("xRes_Option");
 
   
   // Update stored location and settings.
-  getLocation()
-  getSettings()
+  getLocation();
+  getSettings();
   // Check geolocation:
   geoLocationSourceOnChange(update_detector = false);
 
@@ -68,8 +68,8 @@ window.onload = async function () {
   // mychart = await drawBarChart();
   stackedChart = await stackedBarChart();  
 
-  radio_stack.checked = true;
-  radio_day.checked = true;
+  document.getElementById('design_Option').selectedIndex = 0;
+  document.getElementById('xRes_Option').selectedIndex = 1;
 
   };
 
@@ -455,6 +455,15 @@ async function raspberryPiControl(command) {
     console.log(err);
   };
 };
+
+function detection_algorithm_set() {
+  if (settings_detection_algorithm_id.value == "detection-none") {
+    settings_classification_algorithm_id.value = "classification-none";
+    settings_classification_algorithm_id.disabled = true;
+  } else {
+  settings_classification_algorithm_id.disabled = false;
+  }
+}
 
 function updateStatus(status) {
   rec_status_id.innerHTML = status.rec_status;

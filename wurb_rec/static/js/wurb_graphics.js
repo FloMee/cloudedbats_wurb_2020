@@ -20,28 +20,49 @@ async function stackedBarChart(mode = "day") {
   const height = 300;
 
   // define xScale
-  const x = getX(series, margin, width, mode)
+  let x = getX(series, margin, width, mode);
+  let xRef = x.copy();
   
   //define daterange
-  const daterange = getDateRange(x, mode)
+  const daterange = getDateRange(x, mode);
   
   // d3.timeDays(x.domain()[0], x.domain()[1])
   
-  const xBand = d3.scaleBand().domain(daterange)
+  let xBand = d3.scaleBand().domain(daterange)
                   .range([margin.left, width - margin.right])
-                  .padding(0.1)
+                  .padding(0.1);
   // define yScale
   const y = d3.scaleLinear()
               .domain([0, d3.max(series, d => d3.max(d, d => d[1])) * 1.1])
               .range([height - margin.bottom, margin.top]);
 
   // define xAxis
-  function xAxis(g, xScale) {
+  function xAxis(g, xScale, mode) {
       return g.attr("transform", `translate(0,${height - margin.bottom})`)
-          .call(d3.axisBottom(xScale).tickSizeOuter(0).ticks(10))//.tickFormat(d3.timeFormat('%d.%m.%Y')))
+          .call(d3.axisBottom(xScale).tickSizeOuter(0))//.ticks(10))//.tickFormat(d3.timeFormat('%d.%m.%Y'))
           .call(g => g.selectAll(".domain").remove());
+      // if (mode == "day") {
+      //   return g.attr("transform", `translate(0,${height - margin.bottom})`)
+      //   .call(d3.axisBottom(xScale).tickSizeOuter(0).ticks(d3.timeDay.every(1)))//tickFormat(d3.timeFormat('%d.%m.%Y')))
+      //   .call(g => g.selectAll(".domain").remove());
+      // } else if (mode == "hour") {
+      //   return g.attr("transform", `translate(0,${height - margin.bottom})`)
+      //   .call(d3.axisBottom(xScale).tickSizeOuter(0).ticks(d3.timeHour, 2))//.tickFormat(d3.timeFormat('%H')))
+      //   .call(g => g.selectAll(".domain").remove());
+      // }  else if (mode == "month") {
+      //   return g.attr("transform", `translate(0,${height - margin.bottom})`)
+      //   .call(d3.axisBottom(xScale).tickSizeOuter(0).ticks(d3.timeMonth, 1))//.tickFormat(d3.timeFormat('%m')))
+      //   .call(g => g.selectAll(".domain").remove());
+      // }     
   }
   
+  // if (mode == "day") {
+  //   xAxis.call(d3.tickFormat(d3.timeFormat('%d.%m.%Y')))
+  // } else if (mode == "hour") {
+  //   xAxis.call(d3.tickFormat(d3.timeFormat('%H')))
+  // }  else if (mode == "month") {
+  //   xAxis.call(d3.tickFormat(d3.timeFormat('%m')))
+  // }
 
   // define yAxis
   function yAxis(g) {
@@ -86,7 +107,8 @@ async function stackedBarChart(mode = "day") {
     .selectAll('rect')    
     .data(d => d, d => d.data.date)
     .join('rect')
-      .attr('x', (d, i) => x(d.data.date))
+      //.attr('x', (d, i) => x(d.data.date))
+      .attr('x', (d, i) => x(d.data.date) - xBand.bandwidth()/2)
       .attr('y', d => y(d[1]))
       .attr('height', d => y(d[0]) - y(d[1]))
       .attr('width', xBand.bandwidth())
@@ -101,7 +123,7 @@ async function stackedBarChart(mode = "day") {
   
   svg.append('g')
     .classed('x-axis', true)
-    .call(xAxis, x);
+    .call(xAxis, x, mode);
   
   svg.append('g')
     .call(yAxis);
@@ -117,7 +139,8 @@ async function stackedBarChart(mode = "day") {
     rect.transition()
         .duration(500)
         .delay((d, i) => i * 20)
-        .attr("x", (d, i) => x(d.data.date) + xBand.bandwidth() / n * d.index)
+        //.attr("x", (d, i) => x(d.data.date) + xBand.bandwidth() / n * d.index)
+        .attr("x", (d, i) => x(d.data.date) - xBand.bandwidth()/2 + xBand.bandwidth() / n * d.index)
         .attr("width", xBand.bandwidth() / n)
       .transition()
         .attr("y", d => y(d[1] - d[0]))
@@ -134,7 +157,8 @@ async function stackedBarChart(mode = "day") {
         .attr("y", d => y(d[1]))
         .attr("height", d => y(d[0]) - y(d[1]))
       .transition()
-        .attr("x", (d, i) => x(d.data.date))
+        //.attr("x", (d, i) => x(d.data.date))
+        .attr("x", (d, i) => x(d.data.date) - xBand.bandwidth()/2)
         .attr("width", xBand.bandwidth());
   }
 
@@ -149,13 +173,14 @@ async function stackedBarChart(mode = "day") {
   
     function zoomed(event) {
       let n = series.length;
-      let xz = event.transform.rescaleX(x);
-      x.range([margin.left, width - margin.right].map(d => event.transform.applyX(d)));
+      x = event.transform.rescaleX(xRef);
+      t = event.transform
+      //x.range([margin.left, width - margin.right].map(d => event.transform.applyX(d)));
       xBand.range([margin.left, width - margin.right].map(d => event.transform.applyX(d)));
       //svg.selectAll(".bars rect").attr("x", d => x(d.data.date)).attr("width", x.bandwidth());
-      svg.selectAll(".grouped rect").attr("x", (d, i) => x(d.data.date) + xBand.bandwidth() / n * d.index).attr("width", xBand.bandwidth() / n);    
-      svg.selectAll(".stacked rect").attr("x", d => x(d.data.date)).attr("width", xBand.bandwidth());
-      svg.selectAll(".x-axis").call(xAxis, xz);
+      svg.selectAll(".grouped rect").attr("x", d => x(d.data.date) - xBand.bandwidth()/2 + xBand.bandwidth() / n * d.index).attr("width", xBand.bandwidth() / n);          
+      svg.selectAll(".stacked rect").attr("x", d => x(d.data.date) - xBand.bandwidth()/2).attr("width", xBand.bandwidth());
+      svg.selectAll(".x-axis").call(xAxis, x, mode);
     }
   }
 
@@ -173,11 +198,11 @@ function prepareStackedBatData(data, mode) {
   // group raw data to by date
   function resol(data, mode) {
     if (mode == "day") {
-      return d3.timeDay(data);
+      return d3.timeDay(d3.timeHour.offset(data, -12));
     } else if (mode == "hour") {
       return d3.timeHour(data);
     } else if (mode == "month") {
-      return d3.timeMonth(data);
+      return d3.timeMonth(d3.timeHour.offset(data, -12));
     } 
   }
   
@@ -215,31 +240,31 @@ function getDateRange(x, mode) {
   return daterange;
 }
 
+function timeOffset(data, mode, offset = 1) {
+  if (mode == "day") {
+    return d3.timeDay.offset(data, offset);
+  } else if (mode == "hour") {
+    return d3.timeHour.offset(data, offset);
+  } else if (mode == "month") {
+    return d3.timeMonth.offset(data, offset);
+  } 
+}
+
 function getX(series, margin, width, mode) {
 
-  function timeOffset(data, mode) {
-    if (mode == "day") {
-      return d3.timeDay.offset(data, 1);
-    } else if (mode == "hour") {
-      return d3.timeHour.offset(data, 1);
-    } else if (mode == "month") {
-      return d3.timeMonth.offset(data, 1);
-    } 
-  }
- 
   const x = d3.scaleUtc()  
-              .domain([d3.min(_.uniq(series.flatMap(d => d.map(d => d.data.date)))),
+              .domain([timeOffset(d3.min(_.uniq(series.flatMap(d => d.map(d => d.data.date)))), mode, offset = -1),
                 timeOffset(d3.max(_.uniq(series.flatMap(d => d.map(d => d.data.date)))), mode)])
               .range([margin.left, width - margin.right]);
   return x;
 }
-function changeChartStyle(updateRadio) {
-  stackedChart.updateStyle(updateRadio.value);
+function changeChartStyle(updateOption) {
+  stackedChart.updateStyle(updateOption.value);
 }
 
-async function changeChartResolution(resRadio) {
-  stackedChart = await stackedBarChart(resRadio.value)
-  radio_stack.checked = true;  
+async function changeChartResolution(resOption) {
+  stackedChart = await stackedBarChart(resOption.value)
+  document.getElementById('design_Option').selectedIndex = 0;
 }
   // color Legend from https://observablehq.com/@d3/color-legend
 
