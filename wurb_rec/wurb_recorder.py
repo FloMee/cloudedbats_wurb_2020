@@ -635,7 +635,7 @@ class WurbRecorder(wurb_rec.SoundStreamManager):
                     try:
                         if self.wurb_settings.get_setting('classification_algorithm') == "classification-batclassify" and item == None:
                             # Terminated by process.
-                            self.to_classify_queue.put(None)
+                            await self.to_classify_queue.put(None)
                             break
                         elif item == False:
                             await self.remove_items_from_queue(self.to_target_queue)
@@ -782,12 +782,10 @@ class WurbRecorder(wurb_rec.SoundStreamManager):
                         # adding metadata to soundfile                     
                         await self.wurb_manager.wurb_metadata.append_settingMetadata(item["filepath"])                            
                         bat, prob = await self.wurb_manager.wurb_metadata.append_fileMetadata(item)
-                        print(bat)
-                        print(item)
-                        
+                                                
                         message = "Sound_database_worker: added metadata to soundfile"
                         self.wurb_manager.wurb_logging.debug(message, short_message=message)
-                        print(analyzed_path)
+                        
                         try:
                             # move file to "analyzed path"
                             shutil.move(item["filepath"], str(analyzed_path)+"/"+item["filename"])
