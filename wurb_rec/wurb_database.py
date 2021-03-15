@@ -19,7 +19,7 @@ class WurbDatabase(object):
         self.setup_database()
 
     def setup_database(self):
-        target_path = self.wurb_manager.wurb_rpi.get_wavefile_target_dir_path()
+        target_path = self.wurb_manager.wurb_rpi.get_settings_dir_path()
         self.database_path = str(target_path) + '/wurb_data.db'
         if not os.path.isfile(self.database_path):
             self.conn = sqlite3.connect(self.database_path)
