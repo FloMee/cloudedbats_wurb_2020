@@ -78,7 +78,7 @@ class WurbScheduler(object):
             if (start_event_local < now_local) and (now_local < stop_event_local):
                 await self.wurb_manager.start_rec()
             else:
-                await self.wurb_manager.stop_rec()
+                await self.wurb_manager.stop_rec(False)
         else:
             # Different days.
             start_local_new = start_event_local
@@ -92,7 +92,7 @@ class WurbScheduler(object):
             if (start_local_new < now_local) and (now_local < stop_local_new):
                 await self.wurb_manager.start_rec()
             else:
-                await self.wurb_manager.stop_rec()
+                await self.wurb_manager.stop_rec(False)
 
     async def calculate_start_stop(self):
         """ """

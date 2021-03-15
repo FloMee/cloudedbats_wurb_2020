@@ -125,7 +125,7 @@ class WurbRecManager(object):
             message = "Manager: start_rec: " + str(e)
             self.wurb_logging.error(message, short_message=message)
 
-    async def stop_rec(self):
+    async def stop_rec(self, immediate = False):
         """ """
         try:
             rec_status = await self.wurb_recorder.get_rec_status()
@@ -135,7 +135,7 @@ class WurbRecManager(object):
                 self.wurb_logging.info(message, short_message=message)
 
             await self.wurb_recorder.set_rec_status("")
-            await self.wurb_recorder.stop_streaming(stop_immediate=True)
+            await self.wurb_recorder.stop_streaming(immediate)
             await self.ultrasound_devices.reset_devices()
             await self.wurb_database.commitChanges()
         except Exception as e:
