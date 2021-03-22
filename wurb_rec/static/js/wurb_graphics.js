@@ -96,8 +96,12 @@ async function stackedBarChart(mode = "day") {
                 .append('svg')
                 .attr('viewBox', [0, 0, width, height])
                 .call(zoom);
-                
-  let rect = svg.append('g')
+  
+  const chart = svg.append('g');
+  const tooltip =  svg.append('g');
+
+  let rect = //svg.append('g')
+      chart
      .selectAll('g')
     .data(series, d => d.key)    
     .join('g')
@@ -114,25 +118,82 @@ async function stackedBarChart(mode = "day") {
       .attr('width', xBand.bandwidth())
       //.attr('width', (width-margin.left-margin.right)/x.ticks().length)
       .classed('rects', true)
-      .on('mouseenter', (event, d) => {
-        const key = d.key;
-        d3.selectAll('.rects').filter((d,i) => d.key === key).attr('opacity', '0.4');
-      })
-      .on("mouseleave", () => {rect.attr('opacity', '1')});
-    
+      // .on('mouseenter', (event, d) => {
+      //   const key = d.key;
+      //   d3.selectAll('.rects').filter((d,i) => d.key === key).attr('opacity', '0.4');
+      // })
+      // .on("mouseleave", () => {rect.attr('opacity', '1')})
+      .on("touchmove mousemove", function(event) {
+        // const {date, value} = bisect(d3.pointer(event, this)[0]);        
+        console.log(this);
+        let date = this.__data__.data.date;
+        let value = this.__data__[1] - this.__data__[0];
+        let key = this.__data__['key'];
+
+        tooltip
+          .attr('transform', `translate(${x(date)},${d3.pointer(event)[1]})`)
+          .call(callout, `${formatDate(date)}
+        ${key}
+        ${value}`);
+      });
+      svg.on("touchend mouseleave", () => tooltip.call(callout, null));
+
+  
+  function formatDate(date) {
+        return date.toLocaleString("en", {
+          month: "short",
+          day: "numeric",
+          year: "numeric",
+          timeZone: "UTC"
+        });
+      }
+
+  function callout(g, value) {
+    if (!value) return g.style('display', 'none');
+
+    g
+      .style("display", null)
+      .style("pointer-events", "none")
+      .style("font", "10px sans-serif");
+
+    const path = g.selectAll("path")
+      .data([null])
+      .join("path")
+        .attr("fill", "white")
+        .attr("stroke", "black");
+
+    const text = g.selectAll("text")
+      .data([null])
+      .join("text")
+      .call(text => text
+        .selectAll("tspan")
+        .data((value + "").split(/\n/))
+        .join("tspan")
+          .attr("x", 0)
+          .attr("y", (d, i) => `${i * 1.1}em`)
+          .style("font-weight", (_, i) => i ? null : "bold")
+          .text(d => d));
+
+    const {x, y, width: w, height: h} = text.node().getBBox();
+
+    text.attr("transform", `translate(${-w / 2},${15 - y})`);
+    path.attr("d", `M${-w /2 - 10},5H-5l5,-5l5,5H${w / 2 + 10}v${h + 20}h-${w + 20}z`);
+  }
   
   svg.append('g')
     .classed('x-axis', true)
     .call(xAxis, x, mode);
   
   svg.append('g')
+    .classed('y-axis', true)
     .call(yAxis);
   
   svg.append('g')
+    .classed('grid', true)
     .call(grid);
 
   function transitionGrouped() {
-    //y.domain([0, yMax]);
+    y.domain([0, d3.max(_.flatMapDeep(series, d => _.map(d, d=> d[1] - d[0])))*1.1]);
     svg.selectAll('.bars').classed('grouped', true);
     svg.selectAll('.bars').classed('stacked', false);
     let n = series.length;
@@ -145,10 +206,13 @@ async function stackedBarChart(mode = "day") {
       .transition()
         .attr("y", d => y(d[1] - d[0]))
         .attr("height", d => y(0) - y(d[1] - d[0]));
+    svg.selectAll(".y-axis").call(yAxis);
+    svg.selectAll('.grid').selectAll('g').remove();
+    svg.selectAll(".grid").call(grid);
   }
 
   function transitionStacked() {
-    //y.domain([0, d3.max(series, d => d3.max(d, d => d[1]))]);
+    y.domain([0, d3.max(_.flatMapDeep(series, d => _.map(d, d=> d[1])))*1.1]);
     svg.selectAll('.bars').classed('stacked', true);
     svg.selectAll('.bars').classed('grouped', false);
     rect.transition()
@@ -160,6 +224,9 @@ async function stackedBarChart(mode = "day") {
         //.attr("x", (d, i) => x(d.data.date))
         .attr("x", (d, i) => x(d.data.date) - xBand.bandwidth()/2)
         .attr("width", xBand.bandwidth());
+    svg.selectAll(".y-axis").call(yAxis);
+    svg.selectAll('.grid').selectAll('g').remove();
+    svg.selectAll('.grid').call(grid);
   }
 
   function zoom(svg) {
