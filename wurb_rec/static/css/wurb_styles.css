@@ -1,4 +1,5 @@
 
 /* Override Bulma defaults. */
 .input[disabled] { color: black; background: #f7f7f7 !important }
-.pathlist{overflow-y: auto !important} 
+.pathlist{overflow-y: auto !important}
+.tooltip{position: absolute}

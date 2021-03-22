@@ -21,11 +21,12 @@ async function stackedBarChart(mode = "day") {
 
   // define xScale
   let x = getX(series, margin, width, mode);
+  
   let xRef = x.copy();
   
   //define daterange
   const daterange = getDateRange(x, mode);
-  
+  // x.ticks(daterange.length)
   // d3.timeDays(x.domain()[0], x.domain()[1])
   
   let xBand = d3.scaleBand().domain(daterange)
@@ -38,8 +39,9 @@ async function stackedBarChart(mode = "day") {
 
   // define xAxis
   function xAxis(g, xScale, mode) {
+      let numberOfTicks = (getDateRange(x, mode).length > 10) ? 10 : getDateRange(xScale, mode).length;
       return g.attr("transform", `translate(0,${height - margin.bottom})`)
-          .call(d3.axisBottom(xScale).tickSizeOuter(0))//.ticks(10))//.tickFormat(d3.timeFormat('%d.%m.%Y'))
+          .call(d3.axisBottom(xScale).tickSizeOuter(0).ticks(numberOfTicks))//.tickFormat(d3.timeFormat('%d.%m.%Y'))
           .call(g => g.selectAll(".domain").remove());
       // if (mode == "day") {
       //   return g.attr("transform", `translate(0,${height - margin.bottom})`)
@@ -91,17 +93,14 @@ async function stackedBarChart(mode = "day") {
   // define legend
   const leg = legend({color: color, title: "Bat species"});
   
+  // add svg to the specified div-element
   const svg = chartDiv
                 .html(leg.outerHTML)
                 .append('svg')
                 .attr('viewBox', [0, 0, width, height])
                 .call(zoom);
   
-  const chart = svg.append('g');
-  const tooltip =  svg.append('g');
-
-  let rect = //svg.append('g')
-      chart
+  let rect = svg.append('g')
      .selectAll('g')
     .data(series, d => d.key)    
     .join('g')
@@ -118,85 +117,86 @@ async function stackedBarChart(mode = "day") {
       .attr('width', xBand.bandwidth())
       //.attr('width', (width-margin.left-margin.right)/x.ticks().length)
       .classed('rects', true)
-      // .on('mouseenter', (event, d) => {
-      //   const key = d.key;
-      //   d3.selectAll('.rects').filter((d,i) => d.key === key).attr('opacity', '0.4');
-      // })
-      // .on("mouseleave", () => {rect.attr('opacity', '1')})
-      .on("touchmove mousemove", function(event) {
-        // const {date, value} = bisect(d3.pointer(event, this)[0]);        
-        console.log(this);
-        let date = this.__data__.data.date;
-        let value = this.__data__[1] - this.__data__[0];
-        let key = this.__data__['key'];
+        .on("mouseover", mouseover)
+        .on("mousemove", mousemove)
+        .on("mouseleave", mouseleave);
 
-        tooltip
-          .attr('transform', `translate(${x(date)},${d3.pointer(event)[1]})`)
-          .call(callout, `${formatDate(date)}
-        ${key}
-        ${value}`);
-      });
-      svg.on("touchend mouseleave", () => tooltip.call(callout, null));
+  // define the div for the tooltip
+  const tooltip = chartDiv
+    .append("div")
+    .style("opacity", 0)
+    .attr("class", "tooltip")
+    .style("background-color", "white")
+    .style("border", "solid")
+    .style("border-width", "2px")
+    .style("border-radius", "5px")
+    .style("padding", "5px");
 
-  
-  function formatDate(date) {
-        return date.toLocaleString("en", {
-          month: "short",
-          day: "numeric",
-          year: "numeric",
-          timeZone: "UTC"
-        });
-      }
+    // Three function that change the tooltip when user hover / move / leave a cell
+    // adapted from https://www.d3-graph-gallery.com/graph/interactivity_tooltip.html#template
+  function mouseover(event) {
+    tooltip
+      .style("opacity", 1)
+    d3.select(this)
+      .style("stroke", "black")
+      .style("opacity", 1)
+  }
 
-  function callout(g, value) {
-    if (!value) return g.style('display', 'none');
-
-    g
-      .style("display", null)
-      .style("pointer-events", "none")
-      .style("font", "10px sans-serif");
-
-    const path = g.selectAll("path")
-      .data([null])
-      .join("path")
-        .attr("fill", "white")
-        .attr("stroke", "black");
-
-    const text = g.selectAll("text")
-      .data([null])
-      .join("text")
-      .call(text => text
-        .selectAll("tspan")
-        .data((value + "").split(/\n/))
-        .join("tspan")
-          .attr("x", 0)
-          .attr("y", (d, i) => `${i * 1.1}em`)
-          .style("font-weight", (_, i) => i ? null : "bold")
-          .text(d => d));
-
-    const {x, y, width: w, height: h} = text.node().getBBox();
-
-    text.attr("transform", `translate(${-w / 2},${15 - y})`);
-    path.attr("d", `M${-w /2 - 10},5H-5l5,-5l5,5H${w / 2 + 10}v${h + 20}h-${w + 20}z`);
+  function mousemove(event) {      
+    let date = this.__data__.data.date;
+    let value = this.__data__[1] - this.__data__[0];
+    let key = this.__data__['key'];
+    tooltip
+      .html(`${formatDate(date, mode)}: ${value}x ${key}`)
+      .style("left", (d3.pointer(event, this)[0]+70) + "px")
+      .style("top", (d3.pointer(event, chartDiv)[1]) + "px")
+      .style("font-weight", "bold")
+  }
+  function mouseleave(event) {
+    tooltip
+      .style("opacity", 0)
+    d3.select(this)
+      .style("stroke", "none")
+      // .style("opacity", 0.8)
   }
   
+  // add the x-axis to the svg
   svg.append('g')
     .classed('x-axis', true)
     .call(xAxis, x, mode);
+    // .call(adjustTextLabels);
   
+  // add the y-axis to the svg
   svg.append('g')
     .classed('y-axis', true)
     .call(yAxis);
-  
+
+  // add the grid to the svg   
   svg.append('g')
     .classed('grid', true)
     .call(grid);
 
+  // function adjustTextLabels(g){
+  //   g.selectAll('.x-axis .tick text')
+  //     .attr('transform', `translate(${daysToPixels(1) / 2})`);
+  // }
+
+  // function daysToPixels(days){
+  //   var d1 = new Date();
+  //   console.log(x(d3.timeDay.offset(d1, days)) - x(d1));
+  //   return x(d3.timeDay.offset(d1, days)) - x(d1);
+  // }
+
+
+  // function to transform from stacked to grouped
   function transitionGrouped() {
+    // adjust y-axis
     y.domain([0, d3.max(_.flatMapDeep(series, d => _.map(d, d=> d[1] - d[0])))*1.1]);
+    // change class of bars
     svg.selectAll('.bars').classed('grouped', true);
     svg.selectAll('.bars').classed('stacked', false);
     let n = series.length;
+    // change position of the rects through transition
     rect.transition()
         .duration(500)
         .delay((d, i) => i * 20)
@@ -206,15 +206,20 @@ async function stackedBarChart(mode = "day") {
       .transition()
         .attr("y", d => y(d[1] - d[0]))
         .attr("height", d => y(0) - y(d[1] - d[0]));
+    // update y-axis and grid
     svg.selectAll(".y-axis").call(yAxis);
     svg.selectAll('.grid').selectAll('g').remove();
     svg.selectAll(".grid").call(grid);
   }
 
+  // function to transform from grouped to stacked 
   function transitionStacked() {
+    // adjust y-axis
     y.domain([0, d3.max(_.flatMapDeep(series, d => _.map(d, d=> d[1])))*1.1]);
+    // change class of bars
     svg.selectAll('.bars').classed('stacked', true);
     svg.selectAll('.bars').classed('grouped', false);
+    // change position of the rects through transition
     rect.transition()
         .duration(500)
         .delay((d, i) => i * 20)
@@ -224,11 +229,13 @@ async function stackedBarChart(mode = "day") {
         //.attr("x", (d, i) => x(d.data.date))
         .attr("x", (d, i) => x(d.data.date) - xBand.bandwidth()/2)
         .attr("width", xBand.bandwidth());
+    // update y-axis and grid
     svg.selectAll(".y-axis").call(yAxis);
     svg.selectAll('.grid').selectAll('g').remove();
     svg.selectAll('.grid').call(grid);
   }
 
+  //define zoom-behavior
   function zoom(svg) {
     const extent = [[margin.left, margin.top], [width - margin.right, height - margin.top]];
   
@@ -241,13 +248,15 @@ async function stackedBarChart(mode = "day") {
     function zoomed(event) {
       let n = series.length;
       x = event.transform.rescaleX(xRef);
-      t = event.transform
+      t = event.transform;
+      // let numberOfTicks = (getDateRange(x, mode).length > 10) ? 10 : getDateRange(x, mode ).length;
+      //x.ticks(getDateRange(x, mode).length);
       //x.range([margin.left, width - margin.right].map(d => event.transform.applyX(d)));
       xBand.range([margin.left, width - margin.right].map(d => event.transform.applyX(d)));
       //svg.selectAll(".bars rect").attr("x", d => x(d.data.date)).attr("width", x.bandwidth());
       svg.selectAll(".grouped rect").attr("x", d => x(d.data.date) - xBand.bandwidth()/2 + xBand.bandwidth() / n * d.index).attr("width", xBand.bandwidth() / n);          
       svg.selectAll(".stacked rect").attr("x", d => x(d.data.date) - xBand.bandwidth()/2).attr("width", xBand.bandwidth());
-      svg.selectAll(".x-axis").call(xAxis, x, mode);
+      svg.selectAll(".x-axis").call(xAxis, x, mode)//.call(adjustTextLabels);
     }
   }
 
@@ -259,10 +268,10 @@ async function stackedBarChart(mode = "day") {
   return Object.assign(svg.node(), {updateStyle});      
 }
 
-
+// prepare the data from the database for the use in the graphic
 function prepareStackedBatData(data, mode) {    
   const parseTime = d3.timeParse('%Y-%m-%d %H:%M:%S%Z');
-  // group raw data to by date
+  // group raw data by date
   function resol(data, mode) {
     if (mode == "day") {
       return d3.timeDay(d3.timeHour.offset(data, -12));
@@ -295,6 +304,39 @@ function prepareStackedBatData(data, mode) {
   return series
 }
 
+// function to format the date for the tooltip
+function formatDate(date, mode) {
+  if (mode == "day") {
+      return date.toLocaleString("en", {
+        month: "short",
+        day: "numeric",
+        year: "numeric",
+      });
+    } else if (mode == "hour") {
+      let date_offset = d3.timeHour.offset(date)
+      let d1 = date.toLocaleString("en", {
+        month: "short",
+        day: "numeric",
+        year: "numeric",
+        // hour12: false,
+        hour: "numeric",
+        minute:"numeric",
+      });
+      let d2 = date_offset.toLocaleString("en", {
+        // hour12: false,
+        hour:"numeric",
+        minute:"numeric"
+      });
+      return `${d1} - ${d2}`
+    } else if (mode =="month") {
+      return date.toLocaleString("en", {
+        month: "short",
+        year: "numeric",
+      });
+    }
+    
+  }
+// calculate daterange
 function getDateRange(x, mode) {
   let daterange;
   if (mode == "day") {
@@ -306,7 +348,7 @@ function getDateRange(x, mode) {
   }
   return daterange;
 }
-
+// x-axis(mode)-dependent time-offset
 function timeOffset(data, mode, offset = 1) {
   if (mode == "day") {
     return d3.timeDay.offset(data, offset);
@@ -317,28 +359,36 @@ function timeOffset(data, mode, offset = 1) {
   } 
 }
 
+// define xScale depending on xAxis resolution
+// always one time-unit more in both directions
 function getX(series, margin, width, mode) {
 
-  const x = d3.scaleUtc()  
+  const x = d3.scaleTime()  
               .domain([timeOffset(d3.min(_.uniq(series.flatMap(d => d.map(d => d.data.date)))), mode, offset = -1),
                 timeOffset(d3.max(_.uniq(series.flatMap(d => d.map(d => d.data.date)))), mode)])
               .range([margin.left, width - margin.right]);
   return x;
 }
+
+// according to the style options the graph is changed
 function changeChartStyle(updateOption) {
   stackedChart.updateStyle(updateOption.value);
 }
 
+// if chartResolution is changed, the graphic will be redrawn
 async function changeChartResolution(resOption) {
   stackedChart = await stackedBarChart(resOption.value)
   document.getElementById('design_Option').selectedIndex = 0;
 }
-  // color Legend from https://observablehq.com/@d3/color-legend
+  
+
+// color Legend from https://observablehq.com/@d3/color-legend
 
   function legend({
     color,
     title,
     tickSize = 6,
+    // width = d3.select('#stackedChart').node().getBoundingClientRect().width / 4,
     width = 320, 
     height = 44 + tickSize,
     marginTop = 18,
@@ -358,97 +408,22 @@ async function changeChartResolution(resOption) {
         .style("display", "block");
   
     let tickAdjust = g => g.selectAll(".tick line").attr("y1", marginTop + marginBottom - height);
-    let x;
-  
-    // Continuous
-    if (color.interpolate) {
-      const n = Math.min(color.domain().length, color.range().length);
-  
-      x = color.copy().rangeRound(d3.quantize(d3.interpolate(marginLeft, width - marginRight), n));
-  
-      svg.append("image")
-          .attr("x", marginLeft)
-          .attr("y", marginTop)
-          .attr("width", width - marginLeft - marginRight)
-          .attr("height", height - marginTop - marginBottom)
-          .attr("preserveAspectRatio", "none")
-          .attr("xlink:href", ramp(color.copy().domain(d3.quantize(d3.interpolate(0, 1), n))).toDataURL());
-    }
-  
-    // Sequential
-    else if (color.interpolator) {
-      x = Object.assign(color.copy()
-          .interpolator(d3.interpolateRound(marginLeft, width - marginRight)),
-          {range() { return [marginLeft, width - marginRight]; }});
-  
-      svg.append("image")
-          .attr("x", marginLeft)
-          .attr("y", marginTop)
-          .attr("width", width - marginLeft - marginRight)
-          .attr("height", height - marginTop - marginBottom)
-          .attr("preserveAspectRatio", "none")
-          .attr("xlink:href", ramp(color.interpolator()).toDataURL());
-  
-      // scaleSequentialQuantile doesn’t implement ticks or tickFormat.
-      if (!x.ticks) {
-        if (tickValues === undefined) {
-          const n = Math.round(ticks + 1);
-          tickValues = d3.range(n).map(i => d3.quantile(color.domain(), i / (n - 1)));
-        }
-        if (typeof tickFormat !== "function") {
-          tickFormat = d3.format(tickFormat === undefined ? ",f" : tickFormat);
-        }
-      }
-    }
-  
-    // Threshold
-    else if (color.invertExtent) {
-      const thresholds
-          = color.thresholds ? color.thresholds() // scaleQuantize
-          : color.quantiles ? color.quantiles() // scaleQuantile
-          : color.domain(); // scaleThreshold
-  
-      const thresholdFormat
-          = tickFormat === undefined ? d => d
-          : typeof tickFormat === "string" ? d3.format(tickFormat)
-          : tickFormat;
-  
-      x = d3.scaleLinear()
-          .domain([-1, color.range().length - 1])
-          .rangeRound([marginLeft, width - marginRight]);
-  
-      svg.append("g")
-        .selectAll("rect")
-        .data(color.range())
-        .join("rect")
-          .attr("x", (d, i) => x(i - 1))
-          .attr("y", marginTop)
-          .attr("width", (d, i) => x(i) - x(i - 1))
-          .attr("height", height - marginTop - marginBottom)
-          .attr("fill", d => d);
-  
-      tickValues = d3.range(thresholds.length);
-      tickFormat = i => thresholdFormat(thresholds[i], i);
-    }
-  
-    // Ordinal
-    else {
-      x = d3.scaleBand()
-          .domain(color.domain())
-          .rangeRound([marginLeft, width - marginRight]);
-  
-      svg.append("g")
-        .selectAll("rect")
-        .data(color.domain())
-        .join("rect")
-          .attr("x", x)
-          .attr("y", marginTop)
-          .attr("width", Math.max(0, x.bandwidth() - 1))
-          .attr("height", height - marginTop - marginBottom)
-          .attr("fill", color);
-  
-      tickAdjust = () => {};
-    }
+      
+    let x = d3.scaleBand()
+        .domain(color.domain())
+        .rangeRound([marginLeft, width - marginRight]);
+    
+    svg.append("g")
+      .selectAll("rect")
+      .data(color.domain())
+      .join("rect")
+        .attr("x", x)
+        .attr("y", marginTop)
+        .attr("width", Math.max(0, x.bandwidth() - 1))
+        .attr("height", height - marginTop - marginBottom)
+        .attr("fill", color);
+    
+    tickAdjust = () => {};
   
     svg.append("g")
         .attr("transform", `translate(0,${height - marginBottom})`)
