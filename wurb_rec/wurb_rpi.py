@@ -18,6 +18,7 @@ class WurbRaspberryPi(object):
         """ """
         self.wurb_manager = wurb_manager
         self.os_raspbian = None
+        self.hardware_info = None
 
     async def rpi_control(self, command):
         """ """
@@ -164,6 +165,26 @@ class WurbRaspberryPi(object):
                 self.wurb_manager.wurb_logging.error(message, short_message=message)
         #
         return self.os_raspbian
+
+    def get_hardware_info(self):
+        if self.hardware_info is not None:
+            return self.hardware_info
+
+        else:
+            try:
+                hardware_path = pathlib.Path("/proc/device-tree/model")
+                if hardware_path.exists():
+                    with hardware_path.open("r") as hardware_file:
+                        hardware_file_content = hardware_file.read()
+                        print(hardware_file_content)
+                        self.hardware_info = hardware_file_content
+
+            except Exception as e:
+                message = "RPi get_hardware_info: " + str(e)
+                self.wurb_manager.wurb_logging.error(message, short_message=message)
+        
+        return self.hardware_info
+
 
     async def rpi_shutdown(self):
         """ """

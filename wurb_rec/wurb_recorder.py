@@ -637,6 +637,8 @@ class WurbRecorder(wurb_rec.SoundStreamManager):
                             # Terminated by process.
                             await self.to_classify_queue.put(None)
                             break
+                        elif item == None:
+                            break
                         elif item == False:
                             await self.remove_items_from_queue(self.to_target_queue)
                             if wave_file_writer:
@@ -662,6 +664,8 @@ class WurbRecorder(wurb_rec.SoundStreamManager):
                                 if wave_file_writer:
                                     wave_file_writer.close()
                                     wave_filename = wave_file_writer.filename
+                                    wave_filepath = wave_file_writer.filepath
+                                    await self.wurb_manager.wurb_metadata.append_settingMetadata(str(wave_filepath))
                                     wave_file_writer = None
                                     if self.wurb_settings.get_setting('classification_algorithm') == 'classification-batclassify':
                                         await self.to_classify_queue.put(wave_filename)
@@ -745,18 +749,6 @@ class WurbRecorder(wurb_rec.SoundStreamManager):
         target_path = self.wurb_manager.wurb_rpi.get_wavefile_target_dir_path()
         analyzed_path = self.wurb_manager.wurb_rpi.get_wavefile_analyzed_dir_path()
         database = self.wurb_manager.wurb_database
-        #Metadata
-        # metadata = await self.wurb_settings.get_settings()
-        # location = await self.wurb_settings.get_location()
-        # metadata.update({'deviceName': self.device_name, 'Samplerate': self.sampling_freq_hz})
-        # metadata.update(location)
-        # # {'rec_mode': 'rec-mode-manual', 'file_directory': 'recorded_files',
-        # #  'filename_prefix': 'wurb', 'detection_limit': 18.0, 'detection_sensitivity': -50.0,
-        # #  'detection_algorithm': 'detection-simple', 'rec_length_s': '6', 'rec_type': 'FS',
-        # #  'scheduler_start_event': 'on-sunset', 'scheduler_start_adjust': -15.0, 'scheduler_stop_event': 'off-sunrise',
-        # #  'scheduler_stop_adjust': 15.0, 'scheduler_post_action': 'post-none', 'scheduler_post_action_delay': 5.0,
-        # #  'deviceName': 'UltraMic384K 16bit r0', 'Samplerate': 384000, 'geo_source_option': 'geo-manual',
-        # #  'latitude_dd': 0.0, 'longitude_dd': 0.0, 'manual_latitude_dd': 0.0, 'manual_longitude_dd': 0.0}
         
         try:
             while True:
@@ -780,7 +772,7 @@ class WurbRecorder(wurb_rec.SoundStreamManager):
                         self.wurb_manager.wurb_logging.debug(message, short_message=message)
                         
                         # adding metadata to soundfile                     
-                        await self.wurb_manager.wurb_metadata.append_settingMetadata(item["filepath"])                            
+                        # await self.wurb_manager.wurb_metadata.append_settingMetadata(item["filepath"])                            
                         bat, prob = await self.wurb_manager.wurb_metadata.append_fileMetadata(item)
                                                 
                         message = "Sound_database_worker: added metadata to soundfile"
@@ -792,8 +784,13 @@ class WurbRecorder(wurb_rec.SoundStreamManager):
                             # update filepath in item
                             item.update({"filepath": str(analyzed_path)+"/"+item["filename"]})
 
-                            await database.insert_data(item, bat, prob)
-                            message = "{} detected, probability: {:1.2f}%".format(bat, prob*100)
+                            if bat == "Noise":
+                                prob = ""
+                                message = "Probably Noise detected"
+                            else:
+                                message = "{} detected, probability: {:1.2f}%".format(bat, prob*100)
+                            await database.insert_data(item, bat, prob)                            
+                            
                             self.wurb_manager.wurb_logging.info(message, short_message = message)
 
                             await self.set_bat_data(bat)
@@ -837,6 +834,7 @@ class WaveFileWriter:
         self.rec_target_dir_path = None
         self.wave_file = None
         self.filename = None
+        self.filepath = None
         # self.size_counter = 0
 
     def create(self, start_time, max_peak_freq_hz, max_peak_dbfs):
@@ -898,6 +896,7 @@ class WaveFileWriter:
         self.wurb_logging.info(message, short_message=message)
         # Logging debug.
         message = "Filename: " + filename
+        self.filepath = filenamepath
         self.wurb_logging.debug(message=message)
 
     def write(self, buffer):
@@ -963,3 +962,6 @@ class WaveFileWriter:
             sampling_freq_khz = "FS000"
 
         return rec_type + str(sampling_freq_khz)
+
+    def get_filepath(self):
+        return self.filepath
