@@ -39,32 +39,12 @@ async function stackedBarChart(mode = "day") {
 
   // define xAxis
   function xAxis(g, xScale, mode) {
+      // set the number of ticks depending on the length of the x-axis in time; max 10 ticks
       let numberOfTicks = (getDateRange(x, mode).length > 10) ? 10 : getDateRange(xScale, mode).length;
       return g.attr("transform", `translate(0,${height - margin.bottom})`)
-          .call(d3.axisBottom(xScale).tickSizeOuter(0).ticks(numberOfTicks))//.tickFormat(d3.timeFormat('%d.%m.%Y'))
-          .call(g => g.selectAll(".domain").remove());
-      // if (mode == "day") {
-      //   return g.attr("transform", `translate(0,${height - margin.bottom})`)
-      //   .call(d3.axisBottom(xScale).tickSizeOuter(0).ticks(d3.timeDay.every(1)))//tickFormat(d3.timeFormat('%d.%m.%Y')))
-      //   .call(g => g.selectAll(".domain").remove());
-      // } else if (mode == "hour") {
-      //   return g.attr("transform", `translate(0,${height - margin.bottom})`)
-      //   .call(d3.axisBottom(xScale).tickSizeOuter(0).ticks(d3.timeHour, 2))//.tickFormat(d3.timeFormat('%H')))
-      //   .call(g => g.selectAll(".domain").remove());
-      // }  else if (mode == "month") {
-      //   return g.attr("transform", `translate(0,${height - margin.bottom})`)
-      //   .call(d3.axisBottom(xScale).tickSizeOuter(0).ticks(d3.timeMonth, 1))//.tickFormat(d3.timeFormat('%m')))
-      //   .call(g => g.selectAll(".domain").remove());
-      // }     
+          .call(d3.axisBottom(xScale).tickSizeOuter(0).ticks(numberOfTicks))
+          .call(g => g.selectAll(".domain").remove());     
   }
-  
-  // if (mode == "day") {
-  //   xAxis.call(d3.tickFormat(d3.timeFormat('%d.%m.%Y')))
-  // } else if (mode == "hour") {
-  //   xAxis.call(d3.tickFormat(d3.timeFormat('%H')))
-  // }  else if (mode == "month") {
-  //   xAxis.call(d3.tickFormat(d3.timeFormat('%m')))
-  // }
 
   // define yAxis
   function yAxis(g) {
@@ -110,8 +90,8 @@ async function stackedBarChart(mode = "day") {
     .selectAll('rect')    
     .data(d => d, d => d.data.date)
     .join('rect')
-      //.attr('x', (d, i) => x(d.data.date))
-      .attr('x', (d, i) => x(d.data.date) - xBand.bandwidth()/2)
+      .attr('x', (d, i) => x(d.data.date))
+      // .attr('x', (d, i) => x(d.data.date) - xBand.bandwidth()/2)
       .attr('y', d => y(d[1]))
       .attr('height', d => y(d[0]) - y(d[1]))
       .attr('width', xBand.bandwidth())
@@ -163,8 +143,8 @@ async function stackedBarChart(mode = "day") {
   // add the x-axis to the svg
   svg.append('g')
     .classed('x-axis', true)
-    .call(xAxis, x, mode);
-    // .call(adjustTextLabels);
+    .call(xAxis, x, mode)
+    .call(adjustTextLabels);
   
   // add the y-axis to the svg
   svg.append('g')
@@ -176,16 +156,17 @@ async function stackedBarChart(mode = "day") {
     .classed('grid', true)
     .call(grid);
 
-  // function adjustTextLabels(g){
-  //   g.selectAll('.x-axis .tick text')
-  //     .attr('transform', `translate(${daysToPixels(1) / 2})`);
-  // }
+  function adjustTextLabels(g){
+    if (mode == "month") {
+    g.selectAll('.x-axis .tick text')
+      .attr('transform', `translate(${daysToPixels(1) / 2})`);
+    }
+  }
 
-  // function daysToPixels(days){
-  //   var d1 = new Date();
-  //   console.log(x(d3.timeDay.offset(d1, days)) - x(d1));
-  //   return x(d3.timeDay.offset(d1, days)) - x(d1);
-  // }
+  function daysToPixels(days){
+    var d1 = new Date();
+    return x(d3.timeMonth.offset(d1, days)) - x(d1);
+  }
 
 
   // function to transform from stacked to grouped
@@ -200,8 +181,8 @@ async function stackedBarChart(mode = "day") {
     rect.transition()
         .duration(500)
         .delay((d, i) => i * 20)
-        //.attr("x", (d, i) => x(d.data.date) + xBand.bandwidth() / n * d.index)
-        .attr("x", (d, i) => x(d.data.date) - xBand.bandwidth()/2 + xBand.bandwidth() / n * d.index)
+        .attr("x", (d, i) => x(d.data.date) + xBand.bandwidth() / n * d.index)
+        // .attr("x", (d, i) => x(d.data.date) - xBand.bandwidth()/2 + xBand.bandwidth() / n * d.index)
         .attr("width", xBand.bandwidth() / n)
       .transition()
         .attr("y", d => y(d[1] - d[0]))
@@ -226,8 +207,8 @@ async function stackedBarChart(mode = "day") {
         .attr("y", d => y(d[1]))
         .attr("height", d => y(d[0]) - y(d[1]))
       .transition()
-        //.attr("x", (d, i) => x(d.data.date))
-        .attr("x", (d, i) => x(d.data.date) - xBand.bandwidth()/2)
+        .attr("x", (d, i) => x(d.data.date))
+        // .attr("x", (d, i) => x(d.data.date) - xBand.bandwidth()/2)
         .attr("width", xBand.bandwidth());
     // update y-axis and grid
     svg.selectAll(".y-axis").call(yAxis);
@@ -254,9 +235,11 @@ async function stackedBarChart(mode = "day") {
       //x.range([margin.left, width - margin.right].map(d => event.transform.applyX(d)));
       xBand.range([margin.left, width - margin.right].map(d => event.transform.applyX(d)));
       //svg.selectAll(".bars rect").attr("x", d => x(d.data.date)).attr("width", x.bandwidth());
-      svg.selectAll(".grouped rect").attr("x", d => x(d.data.date) - xBand.bandwidth()/2 + xBand.bandwidth() / n * d.index).attr("width", xBand.bandwidth() / n);          
-      svg.selectAll(".stacked rect").attr("x", d => x(d.data.date) - xBand.bandwidth()/2).attr("width", xBand.bandwidth());
-      svg.selectAll(".x-axis").call(xAxis, x, mode)//.call(adjustTextLabels);
+      // svg.selectAll(".grouped rect").attr("x", d => x(d.data.date) - xBand.bandwidth()/2 + xBand.bandwidth() / n * d.index).attr("width", xBand.bandwidth() / n);          
+      svg.selectAll(".grouped rect").attr("x", d => x(d.data.date) + xBand.bandwidth() / n * d.index).attr("width", xBand.bandwidth() / n);          
+      // svg.selectAll(".stacked rect").attr("x", d => x(d.data.date) - xBand.bandwidth()/2).attr("width", xBand.bandwidth());
+      svg.selectAll(".stacked rect").attr("x", d => x(d.data.date)).attr("width", xBand.bandwidth());
+      svg.selectAll(".x-axis").call(xAxis, x, mode).call(adjustTextLabels);
     }
   }
 
@@ -365,7 +348,7 @@ function getX(series, margin, width, mode) {
 
   const x = d3.scaleTime()  
               .domain([timeOffset(d3.min(_.uniq(series.flatMap(d => d.map(d => d.data.date)))), mode, offset = -1),
-                timeOffset(d3.max(_.uniq(series.flatMap(d => d.map(d => d.data.date)))), mode)])
+                timeOffset(d3.max(_.uniq(series.flatMap(d => d.map(d => d.data.date)))), mode, offset = 2)])
               .range([margin.left, width - margin.right]);
   return x;
 }
