@@ -268,11 +268,14 @@
                                                 </select>
                                             </div>
                                         </div>
+                                        <p class="help is-info">
+                                            Only available if sound detection algorithm is not None and recording length is smaller than 15s.
+                                        </p>
                                     </div>
                                     <div class="field">
                                         <label class="label">Length of the recordings</label>
                                         <div class="control">
-                                            <div class="select">
+                                            <div class="select" onchange="recLenghtOnChange()">
                                                 <select id="settings_rec_length_id">
                                                     <option value="4">4 seconds</option>
                                                     <option value="5">5 seconds</option>
@@ -298,7 +301,7 @@
                                         <label class="label">Wave file type, FS or TE</label>
                                         <div class="control">
                                             <div class="select">
-                                                <select id="settings_rec_type_id">
+                                                <select id="settings_rec_type_id" onchange="recTypeOnChange()">
                                                     <option value="FS">Full Spectrum (FS)
                                                     </option>
                                                     <option value="TE">Time Expansion (TE), 10x

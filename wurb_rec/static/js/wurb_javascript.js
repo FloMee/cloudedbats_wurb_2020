@@ -293,53 +293,53 @@ async function getAllBatData() {
   }
 }
 
-async function getBatData() {
-  try {
-    let response = await fetch("/get_bat_data/")
-    let batData = await response.json();
-    console.log(batData)
-    return batData
-  } catch (err) {
-    console.log(err)
-  }
-}
+// async function getBatData() {
+//   try {
+//     let response = await fetch("/get_bat_data/")
+//     let batData = await response.json();
+//     console.log(batData)
+//     return batData
+//   } catch (err) {
+//     console.log(err)
+//   }
+// }
 
-async function getBatData2() {
-  try {
-    const bats = []
-    const amount = []
-    let response = await fetch("/get_bat_data/")
-    let batData = await response.json();
-    for (var i=0; i<batData.length; i++){
-      bats.push(batData[i].bat);
-      amount.push(batData[i].amount);
-    }
-    console.log(batData)
-    return {bats, amount}
-  } catch (err) {
-    console.log(err)
-  }
-}
+// async function getBatData2() {
+//   try {
+//     const bats = []
+//     const amount = []
+//     let response = await fetch("/get_bat_data/")
+//     let batData = await response.json();
+//     for (var i=0; i<batData.length; i++){
+//       bats.push(batData[i].bat);
+//       amount.push(batData[i].amount);
+//     }
+//     console.log(batData)
+//     return {bats, amount}
+//   } catch (err) {
+//     console.log(err)
+//   }
+// }
 
-async function getScatterData() {
-  try {
-    const dates = []
-    const amount = []
-    const bat = []
-    let response = await fetch("/get_scatter_data/")
-    let scatterData = await response.json();
-    console.log(scatterData)
-    for (var i=0; i<scatterData.length; i++){
-      dates.push(scatterData[i].date);
-      amount.push(scatterData[i].amount);
-      bat.push(scatterData[i].bat);
-    }
-    console.log(scatterData)
-    return {dates, amount}
-  } catch (err) {
-    console.log(err)
-  }
-}
+// async function getScatterData() {
+//   try {
+//     const dates = []
+//     const amount = []
+//     const bat = []
+//     let response = await fetch("/get_scatter_data/")
+//     let scatterData = await response.json();
+//     console.log(scatterData)
+//     for (var i=0; i<scatterData.length; i++){
+//       dates.push(scatterData[i].date);
+//       amount.push(scatterData[i].amount);
+//       bat.push(scatterData[i].bat);
+//     }
+//     console.log(scatterData)
+//     return {dates, amount}
+//   } catch (err) {
+//     console.log(err)
+//   }
+// }
 
 async function getLocation() {
   try {
@@ -461,7 +461,25 @@ function detection_algorithm_set() {
     settings_classification_algorithm_id.value = "classification-none";
     settings_classification_algorithm_id.disabled = true;
   } else {
-  settings_classification_algorithm_id.disabled = false;
+    settings_classification_algorithm_id.disabled = false;
+  }
+}
+
+function recLenghtOnChange() {
+  if (settings_rec_length_id.value > 12) {
+    settings_classification_algorithm_id.value = "classification-none";
+    settings_classification_algorithm_id.disabled = true;
+  } else {
+    settings_classification_algorithm_id.disabled = false;
+  }
+}
+
+function recTypeOnChange() {
+  if (settings_rec_type_id.value == "TE") {
+    settings_classification_algorithm_id.value = "classification-none";
+    settings_classification_algorithm_id.disabled = true;
+  } else {
+    settings_classification_algorithm_id.disabled = false;
   }
 }
 
