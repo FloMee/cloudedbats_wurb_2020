@@ -699,7 +699,7 @@ class WurbRecorder(wurb_rec.SoundStreamManager):
                 try:
                     item = await self.to_classify_queue.get()
                     if item == None:
-                        self.to_database_queue.put(None)
+                        await self.to_database_queue.put(None)
                         break
                     else:
                         try:

@@ -79,24 +79,9 @@ async def bat_data_as_file():
 
         response = StreamingResponse(iter([stream.getvalue()]),
                             media_type="text/csv")
-
+        response.headers["Content-Disposition"] = "attachment; filename=export.csv"
         return response
 
-    else:
-        return 0
-
-    
-
-@app.get("/get_bat_data/")
-async def bat_data():
-    query = "SELECT auto_batid as bat, count(auto_batid) as amount FROM audiofiles GROUP BY auto_batid"
-    global wurb_rec_manager
-    c = await wurb_rec_manager.wurb_database.get_cursor()
-    if c is not None:
-        result = c.execute(query)
-        bat_data = [dict(zip([key[0] for key in c.description], row)) for row in result]
-
-        return bat_data
     else:
         return 0
 
@@ -110,34 +95,6 @@ async def all_bat_data():
         bat_data = [dict(zip([key[0] for key in c.description], row)) for row in result]
 
         return bat_data
-    else:
-        return 0
-
-@app.get("/get_path_data/{bat}")
-async def path_data(bat):
-    bats = ["Bbar","Malc","Mbec", "MbraMmys","Mdau","Mnat","NSL","Paur","Ppip","Ppyg","Rfer","Rhip"]
-    if bat in bats:
-        query = "SELECT filepath, auto_id_prob as prob FROM audiofiles WHERE auto_batid LIKE '{}'".format(bat) + 'ORDER BY auto_id_prob DESC'
-        global wurb_rec_manager
-        c = await wurb_rec_manager.wurb_database.get_cursor()
-        result = c.execute(query)
-        bat_data = [dict(zip([key[0] for key in c.description], row)) for row in result]
-        
-        return bat_data
-    else: 
-        return
-        
-      
-
-@app.get('/get_scatter_data/')
-async def get_scatter_data():
-    query = 'SELECT date(datetime) as date, auto_batid as bat, count(filepath) as amount from audiofiles GROUP BY date(datetime), auto_batid'
-    global wurb_rec_manager
-    c = await wurb_rec_manager.wurb_database.get_cursor()
-    if c is not None:
-        result = c.execute(query)
-        scatter_data = [dict(zip([key[0] for key in c.description], row)) for row in result]
-        return scatter_data
     else:
         return 0
 

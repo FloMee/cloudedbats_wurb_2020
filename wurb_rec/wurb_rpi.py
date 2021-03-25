@@ -176,7 +176,7 @@ class WurbRaspberryPi(object):
                 if hardware_path.exists():
                     with hardware_path.open("r") as hardware_file:
                         hardware_file_content = hardware_file.read()
-                        print(hardware_file_content)
+                        #print(hardware_file_content)
                         self.hardware_info = hardware_file_content
 
             except Exception as e:
