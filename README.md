@@ -101,8 +101,8 @@ Make some configurations:
 
 Change this (example for Swedish users):
 
-- Password: chiroptera
-- Network options-Hostname: wurb 
+- System Options-Password: chiroptera
+- System Options-Hostname: wurb 
 - Localisation Options-Timezone: Europe - Stockholm
 - Localisation Options-WLAN Country: SE
 - Advanced Options-Expand Filesystem.
