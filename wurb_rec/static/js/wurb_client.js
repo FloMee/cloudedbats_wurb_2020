@@ -1,4 +1,12 @@
 
+function checkClassificationPossibility() {
+  if (settings_rec_length_id.value > 12 || settings_rec_type_id.value == "TE" || ['mode-on', 'mode-scheduler-on'].includes(detector_mode_select_id.value)) {
+    return false
+  } else {
+    return true
+  }
+}
+
 async function startRecording() {
   try {
     document.getElementById("detector_status_id").innerHTML = "Waiting...";
@@ -31,6 +39,25 @@ async function recModeOnChange() {
     console.log(err);
   };
 };
+
+
+function recLenghtOnChange() {
+  // disable classification option if rec length too long
+  if (settings_rec_length_id.value > 12) {
+    settings_classification_algorithm_id.disabled = true;
+  } else if (checkClassificationPossibility()) {
+    settings_classification_algorithm_id.disabled = false;
+  }
+}
+
+function recTypeOnChange() {
+  // disable classification option if time expansion is used
+  if (settings_rec_type_id.value == "TE") {
+    settings_classification_algorithm_id.disabled = true;
+  } else if (checkClassificationPossibility()){
+    settings_classification_algorithm_id.disabled = false;
+  }
+}
 
 async function saveLocationSource() {
   try {
@@ -131,6 +158,7 @@ async function saveSettings(settings_type) {
     else if (settings_type == "startup") {
       url_string = "/save-settings-startup/";
     } 
+    let classification_algorithm = (settings_classification_algorithm_id.disabled) ? 'classification_none' : settings_classification_algorithm_id.value
     let settings = {
       rec_mode: detector_mode_select_id.value,
       file_directory: settings_file_directory_id.value,
@@ -139,6 +167,7 @@ async function saveSettings(settings_type) {
       detection_limit_khz: settings_detection_limit_id.value,
       detection_sensitivity_dbfs: settings_detection_sensitivity_id.value,
       detection_algorithm: settings_detection_algorithm_id.value,
+      classification_algorithm: classification_algorithm,
       rec_length_s: settings_rec_length_id.value,
       rec_type: settings_rec_type_id.value,
       feedback_on_off: settings_feedback_on_off_id.value,

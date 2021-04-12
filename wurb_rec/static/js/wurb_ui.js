@@ -24,38 +24,46 @@ function modeSelectOnChange(update_detector) {
   hideDivision(div_manual_triggering_id);
   hideDivision(div_detector_power_off_id);
   if (selected_value == "mode-off") {
-    // stopRecording()
+      if (checkClassificationPossibility()) {settings_classification_algorithm_id.disabled = false;}
+      // stopRecording()
     if (update_detector) {
       saveSettings()
     }
   }
   else if (selected_value == "mode-on") {
-    if (update_detector) {
+
+      settings_classification_algorithm_id.disabled = true;
+      
+      if (update_detector) {
       saveSettings()
     }
     // startRecording()
   }
   else if (selected_value == "mode-auto") {
-    if (update_detector) {
+      if (checkClassificationPossibility()) {settings_classification_algorithm_id.disabled = false;}
+      if (update_detector) {
       saveSettings()
     }
     // startRecording()
   }
   else if (selected_value == "mode-manual") {
-    showDivision(div_manual_triggering_id);
-    if (update_detector) {
+      if (checkClassificationPossibility()) {settings_classification_algorithm_id.disabled = false;}
+      showDivision(div_manual_triggering_id);
+      if (update_detector) {
       saveSettings()
     }
     // startRecording()
   }
   else if (selected_value == "mode-scheduler-on") {
-    // stopRecording()
+      settings_classification_algorithm_id.disabled = true;
+      // stopRecording()
     if (update_detector) {
       saveSettings()
     }
   }
   else if (selected_value == "mode-scheduler-auto") {
-    // stopRecording()
+      if (checkClassificationPossibility()) {settings_classification_algorithm_id.disabled = false;}
+      // stopRecording()
     if (update_detector) {
       saveSettings()
     }
@@ -251,6 +259,7 @@ function updateSettings(settings) {
   settings_detection_limit_id.value = settings.detection_limit_khz
   settings_detection_sensitivity_id.value = settings.detection_sensitivity_dbfs
   settings_detection_algorithm_id.value = settings.detection_algorithm
+  settings_classification_algorithm_id = settings.classification_algorithm
   settings_rec_length_id.value = settings.rec_length_s
   settings_rec_type_id.value = settings.rec_type
   settings_feedback_on_off_id.value = settings.feedback_on_off

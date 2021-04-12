@@ -1,5 +1,5 @@
 
-window.onload = function () {
+window.onload = async function () {
 
   define_global_variables()
 
@@ -21,6 +21,11 @@ window.onload = function () {
   startWebsocket(ws_url);
 
   // alert("Onload done...")
+
+  stackedChart = await stackedBarChart();  
+
+  document.getElementById('design_Option').selectedIndex = 0;
+  document.getElementById('xRes_Option').selectedIndex = 1;
 
 };
 

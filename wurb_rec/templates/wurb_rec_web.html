@@ -11,19 +11,14 @@
     <!-- Bulma -->
     <!-- <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.8.0/css/bulma.min.css"> -->
     <!-- <script defer src="https://use.fontawesome.com/releases/v5.3.1/js/all.js"></script> -->
-<<<<<<< HEAD
-    <link rel="stylesheet" href="{{ url_for('static', path='css/bulma-0.8-min.css') }}">
     <!-- libraries for interactive graphics -->
     <!--<script src="https://d3js.org/d3.v6.min.js"></script>-->
     <!--<script src="https://cdn.jsdelivr.net/npm/lodash@4.17.20/lodash.min.js"></script>-->
     <script src="{{ url_for('static', path='js/d3.min.js/') }}"></script>
     <script src="{{ url_for('static', path='js/lodash.min.js/') }}"></script>
     <!-- CloudedBats -->
-    <link href="{{ url_for('static', path='css/wurb_styles.css') }}?version1" rel="stylesheet">
     <script src="{{ url_for('static', path='js/wurb_graphics.js/') }}"></script>
-    <script src="{{ url_for('static', path='js/wurb_javascript.js/?v=10') }}"></script>
-
-=======
+    
     <!-- <link rel="stylesheet" href="{{ url_for('static', path='css/bulma-0.8-min.css') }}"> -->
     <link rel="stylesheet" href="{{ url_for('static', path='css/bulma-0.9.1-min.css') }}">
     <!-- CloudedBats -->
@@ -33,11 +28,11 @@
     <script src="{{ url_for('static', path='js/wurb_ui.js/?v=14') }}"></script>
     <script src="{{ url_for('static', path='js/wurb_client.js/?v=14') }}"></script>
     <script src="{{ url_for('static', path='js/wurb_onload.js/?v=14') }}"></script>
->>>>>>> c5f7bebe5bd19c82a061c5e65cde6f43fb1ffa1a
 </head>
 
 <body>
     <section class="section has-background-grey-dark is-fluid">
+        <div class="container">
         <div class="tile is-ancestor">
             <div class="tile is-vertical">
                 <div class="tile">
@@ -381,36 +376,9 @@
                                         Sound above this limit will be used for automatic detection.
                                     </p>
                                 </div>
-<<<<<<< HEAD
-                                <div class="buttons is-centered">
-                                    <button style="margin:5px;" id="geo_set_pos_button_id"
-                                        class="button is-info is-rounded" onclick="saveLocation()">
-                                        <span id="save_location_button_text_id">Save</span>
-                                    </button>
-                                    <button style="margin:5px;" id="geo_set_time_button_id"
-                                        class="button is-info is-rounded" onclick="setDetectorTime()">
-                                        Set time
-                                    </button>
-                                </div>
-                            </article>
-                             
-                        </div>
-                        <div class="tile is-parent is-vertical">
-
-                            <!-- Tile: Settings -->
-                            <article class="tile is-child box has-background-grey-lighter">
-                                <!-- Content. -->
-                                <p class="title">Settings</p>
-                                <p class="subtitle">Settings for the recording unit.</p>
-
-                                <div class="field is-horizontal">
-                                    <div class="field-label is-normal">
-                                        <label class="label">Rec.&nbsp;mode</label>
-=======
                                 <div class="field">
                                     <div class="field-label label is-normal has-text-left">
                                         Automatic&nbsp;detection:&nbsp;Sensitivity&nbsp;(dBFS)
->>>>>>> c5f7bebe5bd19c82a061c5e65cde6f43fb1ffa1a
                                     </div>
                                     <div class="field-body">
                                         <div class="field is-narrow">
@@ -433,7 +401,7 @@
                                     <label class="label">Automatic&nbsp;detection&nbsp;algorithm</label>
                                     <div class="control">
                                         <div class="select">
-                                            <select id="settings_detection_algorithm_id">
+                                            <select id="settings_detection_algorithm_id" onchange="detection_algorithm_set()">
                                                 <option value="detection-none">None (everything is recorded)
                                                 </option>
                                                 <option value="detection-simple">Simple (single trigging event)
@@ -443,10 +411,26 @@
                                     </div>
                                 </div>
                                 <div class="field">
+                                        <label class="label">Bat call classification algorithm</label>
+                                        <div class="control">
+                                            <div class="select">
+                                                <select id="settings_classification_algorithm_id">                                                    
+                                                    <option value="classification-batclassify">BatClassify 
+                                                    </option>
+                                                    <option value="classification-none">None
+                                                    </option>
+                                                </select>
+                                            </div>
+                                        </div>
+                                        <p class="help is-info">
+                                            Only available if sound detection algorithm is not None and recording length is smaller than 15s.
+                                        </p>
+                                    </div>   
+                                <div class="field">
                                     <label class="label">Length of recorded sound files</label>
                                     <div class="control">
                                         <div class="select">
-                                            <select id="settings_rec_length_id">
+                                            <select id="settings_rec_length_id" onchange="recLenghtOnChange()">
                                                 <option value="4">4 seconds</option>
                                                 <option value="5">5 seconds</option>
                                                 <option value="6">6 seconds</option>
@@ -472,7 +456,7 @@
                                     <label class="label">Recorded sound file type (FS or TE)</label>
                                     <div class="control">
                                         <div class="select">
-                                            <select id="settings_rec_type_id">
+                                            <select id="settings_rec_type_id" onchange="recTypeOnChange()">
                                                 <option value="FS">Full Spectrum (FS)
                                                 </option>
                                                 <option value="TE">Time Expansion (TE), 10x
@@ -492,10 +476,9 @@
                                         </div>
                                     </div>
                                 </div>
-<<<<<<< HEAD
 
                                 <!-- Settings: more. -->
-                                <div id="div_settings_more_id"
+                                <!--<div id="div_settings_more_id"
                                     style="visibility:hidden; overflow:hidden; height:0; width:0;" class="">
                                     <div class="field">
                                         <label class="label">Sound&nbsp;detection&nbsp;algorithm</label>
@@ -510,42 +493,7 @@
                                             </div>
                                         </div>
                                     </div>
-                                    <div class="field">
-                                        <label class="label">Bat call classification algorithm</label>
-                                        <div class="control">
-                                            <div class="select">
-                                                <select id="settings_classification_algorithm_id">                                                    
-                                                    <option value="classification-batclassify">BatClassify 
-                                                    </option>
-                                                    <option value="classification-none">None
-                                                    </option>
-                                                </select>
-                                            </div>
-                                        </div>
-                                        <p class="help is-info">
-                                            Only available if sound detection algorithm is not None and recording length is smaller than 15s.
-                                        </p>
-                                    </div>
-                                    <div class="field">
-                                        <label class="label">Length of the recordings</label>
-                                        <div class="control">
-                                            <div class="select" onchange="recLenghtOnChange()">
-                                                <select id="settings_rec_length_id">
-                                                    <option value="4">4 seconds</option>
-                                                    <option value="5">5 seconds</option>
-                                                    <option value="6">6 seconds</option>
-                                                    <option value="7">7 seconds</option>
-                                                    <option value="8">8 seconds</option>
-                                                    <option value="9">9 seconds</option>
-                                                    <option value="10">10 seconds</option>
-                                                    <option value="12">12 seconds</option>
-                                                    <option value="15">15 seconds</option>
-                                                    <option value="20">20 seconds</option>
-                                                    <option value="60">1 minute</option>
-                                                    <option value="120">2 minutes</option>
-                                                    <option value="300">5 minutes</option>
-                                                </select>
-=======
+                                </div> -->
                                 <div class="field">
                                     <div class="field-label label is-normal has-text-left">
                                         Audio&nbsp;feedback&nbsp;filter:&nbsp;Low&nbsp;limit&nbsp;(kHz)
@@ -555,22 +503,9 @@
                                             <div class="control">
                                                 <input id="settings_feedback_filter_low_id" class="input" type="number"
                                                     placeholder="15.0" value="15.0">
->>>>>>> c5f7bebe5bd19c82a061c5e65cde6f43fb1ffa1a
                                             </div>
                                         </div>
                                     </div>
-<<<<<<< HEAD
-                                    <div class="field">
-                                        <label class="label">Wave file type, FS or TE</label>
-                                        <div class="control">
-                                            <div class="select">
-                                                <select id="settings_rec_type_id" onchange="recTypeOnChange()">
-                                                    <option value="FS">Full Spectrum (FS)
-                                                    </option>
-                                                    <option value="TE">Time Expansion (TE), 10x
-                                                    </option>
-                                                </select>
-=======
                                     <p class="help is-info">
                                         Mainly used to remove low frequency noise.
                                     </p>
@@ -584,7 +519,6 @@
                                             <div class="control">
                                                 <input id="settings_feedback_filter_high_id" class="input" type="number"
                                                     placeholder="120.0" value="120.0">
->>>>>>> c5f7bebe5bd19c82a061c5e65cde6f43fb1ffa1a
                                             </div>
                                         </div>
                                     </div>
@@ -753,10 +687,8 @@
                                     </div>
                                 </div>
                             </div>
-
-<<<<<<< HEAD
-                            </article>                            
-                        </div>
+                        </article>                            
+                        <!--</div>-->
                         <!--<div class="tile is-parent is-vertical">
                             <article class="tile is-child box has-background-grey-lighter">
                                 <p>TestProbe</p>
@@ -764,61 +696,61 @@
                             
                         </div>-->
                     </div>
-                    <div class="tile is-parent is-vertical">                        
-                        <div class="tile is-child box has-background-grey-lighter"> 
-                            <div class="field is-horizontal">
+                </div>
+                <!-- Graphics -->
+                <div class="tile is-parent is-vertical">                        
+                    <div class="tile is-child box has-background-grey-lighter"> 
+                        <div class="field is-horizontal">
+                            <div class="field-label is-normal">
+                                <label class="label">Chart design</label>
+                            </div>
+                            <div class="field-body">
+                                <div class="field is-narrow">
+                                    <div class="control">
+                                        <div class="select">
+                                            <select id="design_Option" onchange="changeChartStyle(this)">
+                                                <option selected value="stacked">stacked
+                                                </option>
+                                                <option value="grouped">grouped
+                                                </option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                </div>
                                 <div class="field-label is-normal">
-                                    <label class="label">Chart design</label>
+                                    <label class="label">Chart x-axis resolution</label>
                                 </div>
-                                <div class="field-body">
-                                    <div class="field is-narrow">
-                                        <div class="control">
-                                            <div class="select">
-                                                <select id="design_Option" onchange="changeChartStyle(this)">
-                                                    <option selected value="stacked">stacked
-                                                    </option>
-                                                    <option value="grouped">grouped
-                                                    </option>
-                                                </select>
-                                            </div>
+                                <div class="field">
+                                    <div class="control">
+                                        <div class="select">
+                                            <select id="xRes_Option" onchange="changeChartResolution(this)">
+                                                <option value="month">month
+                                                </option>
+                                                <option selected value="day">day
+                                                </option>
+                                                <option value="hour">hour
+                                                </option>
+                                            </select>
                                         </div>
                                     </div>
-                                    <div class="field-label is-normal">
-                                        <label class="label">Chart x-axis resolution</label>
-                                    </div>
-                                        <div class="field">
-                                            <div class="control">
-                                                <div class="select">
-                                                    <select id="xRes_Option" onchange="changeChartResolution(this)">
-                                                        <option value="month">month
-                                                        </option>
-                                                        <option selected value="day">day
-                                                        </option>
-                                                        <option value="hour">hour
-                                                        </option>
-                                                    </select>
-                                                </div>
-                                            </div>
-                                        </div>
-                                </div>
-                            </div>                            
-                            <div class="field" id="stackedChart">
+                                </div>                                    
                             </div>
-                            <div class="buttons is-centered">
-                                    <button style="margin:5px;" id="rec_start_button_id"
-                                        class="button is-info is-rounded is-medium" onclick="window.location.href='/get_bat_data_as_file'">
-                                        Download Data
-                                    </button>
-                            </div>
-                        </div>             
-                    </div>         
+                        </div>                            
+                        <div class="field" id="stackedChart">
+                        </div>
+                        <div class="buttons is-centered">
+                                <button style="margin:5px;" id="rec_start_button_id"
+                                    class="button is-info is-rounded is-medium" onclick="window.location.href='/get_bat_data_as_file'">
+                                    Download Data
+                                </button>
+                        </div>
+                    </div>             
+                </div>         
                     
-                    <div class="tile is-parent is-vertical">
-=======
+                    <!--<div class="tile is-parent is-vertical">-->
                             <hr>
->>>>>>> c5f7bebe5bd19c82a061c5e65cde6f43fb1ffa1a
 
-                            <div class="field is-horizontal">
+                            <!--<div class="field is-horizontal">
                                 <div class="field-body">
                                     <div class="control">
                                         <button style="margin:5px;" id="settings_save_button_id"
@@ -827,24 +759,21 @@
                                         </button>
                                         <button style="margin:5px;" id="settings_reset_button_id"
                                             class="button is-info is-rounded" onclick="getSettings()">
-                                            Cancel
+                                            Cancel-->
                                             <!-- Last saved -->
-                                        </button>
+                                        <!--</button>-->
                                         <!-- <button style="margin:5px;" id="settings_default_button_id" -->
                                             <!-- class="button is-info is-rounded" onclick="getDefaultSettings()"> -->
                                             <!-- User default -->
                                         <!-- </button> -->
-                                    </div>
+                                    <!--</div>
                                 </div>
                             </div>
 
                         </article>
 
-                    </div>
-<<<<<<< HEAD
-                </div>                
-=======
-                </div>
+                    </div>-->
+                <!--</div>-->
                 <div class="tile is-parent is-vertical">
 
                     <!-- Article: Recordings -->
@@ -959,8 +888,8 @@
                     </article>
 
                 </div>
->>>>>>> c5f7bebe5bd19c82a061c5e65cde6f43fb1ffa1a
             </div>
+        </div>
         </div>
     </section>
 </body>

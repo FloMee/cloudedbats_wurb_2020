@@ -211,6 +211,7 @@ async def save_location(settings: LocationSettings):
         # Logging debug.
         wurb_rec_manager.wurb_logging.debug(message="API called: save-location.")
         await wurb_rec_manager.wurb_settings.save_location(settings.dict())
+        await wurb_rec_manager.wurb_metadata.update_location(settings.dict())
     except Exception as e:
         # Logging error.
         message = "Called: save_location: " + str(e)

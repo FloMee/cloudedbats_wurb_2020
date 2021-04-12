@@ -33,13 +33,10 @@ class WurbRecManager(object):
             self.wurb_settings = None
             self.wurb_gps = None
             self.wurb_scheduler = None
-<<<<<<< HEAD
             self.wurb_database = None
             self.wurb_metadata = None
-=======
             self.wurb_audiofeedback = None
             self.manual_trigger_activated = False
->>>>>>> c5f7bebe5bd19c82a061c5e65cde6f43fb1ffa1a
 
         except Exception as e:
             print("Exception: ", e)

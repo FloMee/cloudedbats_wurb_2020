@@ -146,20 +146,12 @@ Make some configurations:
 
 Change this (example for Swedish users):
 
-<<<<<<< HEAD
-- System Options-Password: chiroptera
-- System Options-Hostname: wurb 
-- Localisation Options-Timezone: Europe - Stockholm
-- Localisation Options-WLAN Country: SE
-- Advanced Options-Expand Filesystem.
-=======
 - System Options - Password: chiroptera
 - System Options - Hostname: wurb 
 - System Options - Network at boot: No 
 - Localisation Options - Timezone: Europe - Stockholm
 - Localisation Options - WLAN Country: SE
 - Advanced Options - Expand Filesystem.
->>>>>>> c5f7bebe5bd19c82a061c5e65cde6f43fb1ffa1a
 
 Reboot and reconnect. Remember to use the new password.:
 

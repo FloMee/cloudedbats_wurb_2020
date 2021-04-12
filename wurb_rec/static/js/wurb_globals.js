@@ -32,6 +32,7 @@ function define_global_variables() {
   const settings_detection_limit_id = document.getElementById("settings_detection_limit_id");
   const settings_detection_sensitivity_id = document.getElementById("settings_detection_sensitivity_id");
   const settings_detection_algorithm_id = document.getElementById("settings_detection_algorithm_id");
+  const settings_classification_algorithm_id = document.getElementById("settings_classification_algorithm_id");
   const settings_rec_length_id = document.getElementById("settings_rec_length_id");
   const settings_rec_type_id = document.getElementById("settings_rec_type_id");
   const settings_feedback_on_off_id = document.getElementById("settings_feedback_on_off_id");
