@@ -73,7 +73,6 @@ class SoundStreamManager(object):
                 if self.source_task:
                     self.source_task.cancel()
                 await self.from_source_queue.put(None)  # Terminate.
-                await self.process_task.
         except Exception as e:
             print("Exception: SoundStreamManager: stop_streaming:", e)
 
