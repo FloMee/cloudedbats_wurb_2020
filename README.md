@@ -2,9 +2,6 @@
 
 Welcome to CloudedBats-WURB, the DIY bat detector.
 
-**Warning: Stability problems with RaspiOS Lite 2021-01-11: 
-https://github.com/cloudedbats/cloudedbats_wurb_2020/issues/34**
-
 **Note: This is a new version of the WURB bat detector.
 The old version can still be found here: 
 https://github.com/cloudedbats/cloudedbats_wurb**
@@ -90,7 +87,8 @@ This is valid for the CloudedBats-WURB 2020 version.
 - Stylesheets for responsive web pages are based on Bulma (https://bulma.io).
 - FastAPI and uvicorn (https://www.uvicorn.org) are used to run the asynchronous web services.
 - Pythons new asyncio library is used to replace all threads in the backend services. 
-- Sounddevice (https://python-sounddevice.readthedocs.io/) used instead of pyaudio.
+- Sounddevice and pyaudio have previously been used for communication with audio devices, but
+  they are now replaced by alsaaudio (https://larsimmisch.github.io/pyalsaaudio/).
 
 ## Hardware
 
@@ -203,7 +201,7 @@ have to download and install a new version:
 Install software:
 
     sudo apt install git python3-venv python3-dev
-    sudo apt install libportaudio2 libatlas-base-dev udevil
+    sudo apt install libatlas-base-dev udevil
 
 ### Pettersson M500 (500kHz)
 
