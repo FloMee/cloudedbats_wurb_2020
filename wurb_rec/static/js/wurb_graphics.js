@@ -429,4 +429,13 @@ async function changeChartResolution(resOption) {
     return svg.node();
   }
 
+  async function getAllBatData() {
+    try {
+      let response = await fetch('/get_all_bat_data/')
+      let batData = await response.json();
+      return batData
+    } catch (err) {
+      console.log(err)
+    }
+  }
 
