@@ -568,7 +568,7 @@ class WurbRecorder(wurb_rec.SoundStreamManager):
                                     await self.wurb_manager.wurb_metadata.append_settingMetadata(str(wave_filepath))
                                     wave_file_writer = None
                                     if self.wurb_settings.get_setting('classification_algorithm') == 'classification-batclassify':
-                                        await self.to_classify_queue.put(wave_filename)
+                                        await self.to_classify_queue.put({"filename": wave_filename, "filepath": wave_filepath}) 
                     finally:
                         self.to_target_queue.task_done()
                         await asyncio.sleep(0)
@@ -587,8 +587,8 @@ class WurbRecorder(wurb_rec.SoundStreamManager):
             pass
     
     async def sound_classify_worker(self):
-        target_path = self.wurb_manager.wurb_rpi.get_wavefile_target_dir_path()
-        analyzed_path = self.wurb_manager.wurb_rpi.get_wavefile_analyzed_dir_path()
+        # target_path = self.wurb_manager.wurb_rpi.get_wavefile_target_dir_path()
+        # analyzed_path = self.wurb_manager.wurb_rpi.get_wavefile_analyzed_dir_path()
         try:
             proc = p.spawn("BatClassify", timeout=None)           
             # waiting 40 seconds to be sure models for batclassify are loaded
@@ -602,21 +602,24 @@ class WurbRecorder(wurb_rec.SoundStreamManager):
                         if item == None:
                             await self.to_database_queue.put(None)
                             break
-                        elif target_path.exists():
-                            if not analyzed_path.exists():
-                                analyzed_path.mkdir()                             
-                            
-                            filepath = str(target_path) + "/" + item
+                        else: 
+                            # target_path = item["filepath"]
+                            # analyzed_path = pathlib.Path(target_path, "analyzed")
+                            # if target_path.exists():
+                            #     if not analyzed_path.exists():
+                            #         analyzed_path.mkdir()                             
+
+                            filepath = str(item["filepath"])
+                            # filepath = str(target_path) + "/" + item
                             proc.expect('inputfile:')   
-                            proc.sendline(filepath)
+                            proc.sendline(str(filepath))
                             message = "Analysing sound file..."
-                            #message = "Audiodatei {} wird analysiert".format(item)
                             self.wurb_manager.wurb_logging.info(message, short_message = message)                            
                             proc.expect('\n')
                             proc.expect('\n')
                             stdout = proc.before.decode()                      
                             stdout = json.loads(stdout)
-                            await self.to_database_queue.put({"filename": item, "batclassify": stdout, "filepath": filepath})                           
+                            await self.to_database_queue.put({"filename": item["filename"], "batclassify": stdout, "filepath": filepath})                           
                             
                     # except Exception as e:
                     #     message = "Recorder: sound_classify_worker: " + str(e)
@@ -644,8 +647,8 @@ class WurbRecorder(wurb_rec.SoundStreamManager):
             pass
 
     async def sound_database_worker(self):
-        target_path = self.wurb_manager.wurb_rpi.get_wavefile_target_dir_path()
-        analyzed_path = self.wurb_manager.wurb_rpi.get_wavefile_analyzed_dir_path()
+        # target_path = self.wurb_manager.wurb_rpi.get_wavefile_target_dir_path()
+        # analyzed_path = self.wurb_manager.wurb_rpi.get_wavefile_analyzed_dir_path()
         database = self.wurb_manager.wurb_database
         
         try:
@@ -660,11 +663,9 @@ class WurbRecorder(wurb_rec.SoundStreamManager):
                         break
                     else:
                         # extract datatime String from filename and transform dtime to datetimeformat for sqlite
-                        
                         dtime = datetime.datetime.strptime(item["filename"].split('_')[1], "%Y%m%dT%H%M%S%z")
 
-                        item.update({'datetime': dtime})
-                        
+                        item.update({'datetime': dtime})                        
 
                         message = "Sound_database_worker: extracted datetime from item"
                         self.wurb_manager.wurb_logging.debug(message, short_message=message)
@@ -677,21 +678,27 @@ class WurbRecorder(wurb_rec.SoundStreamManager):
                         self.wurb_manager.wurb_logging.debug(message, short_message=message)
                         
                         try:
-                            # move file to "analyzed path"
-                            shutil.move(item["filepath"], str(analyzed_path)+"/"+item["filename"])
-                            # update filepath in item
-                            item.update({"filepath": str(analyzed_path)+"/"+item["filename"]})
+                            target_path = pathlib.Path(item["filepath"]).parent
+                            analyzed_path = pathlib.Path(target_path, "analyzed")
+                            if target_path.exists():
+                                if not analyzed_path.exists():
+                                    analyzed_path.mkdir()
 
-                            if bat == "Noise":
-                                prob = ""
-                                message = "Probably Noise detected"
-                            else:
-                                message = "{} detected, probability: {:1.2f}%".format(bat, prob*100)
-                            await database.insert_data(item, bat, prob)                            
-                            
-                            self.wurb_manager.wurb_logging.info(message, short_message = message)
+                                # move file to "analyzed path"
+                                shutil.move(item["filepath"], str(analyzed_path)+"/"+item["filename"])
+                                # update filepath in item
+                                item.update({"filepath": str(analyzed_path)+"/"+item["filename"]})
 
-                            await self.set_bat_data(bat)
+                                if bat == "Noise":
+                                    prob = ""
+                                    message = "Probably Noise detected"
+                                else:
+                                    message = "{} detected, probability: {:1.2f}%".format(bat, prob*100)
+                                await database.insert_data(item, bat, prob)                            
+                                
+                                self.wurb_manager.wurb_logging.info(message, short_message = message)
+
+                                await self.set_bat_data(bat)
                         except Exception as e:
                             message = "Recorder: sound_database_worker: " + str(e)
                             self.wurb_manager.wurb_logging.error(message, short_message=message)
