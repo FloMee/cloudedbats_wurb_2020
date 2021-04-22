@@ -657,53 +657,54 @@ class WurbRecorder(wurb_rec.SoundStreamManager):
                     item = await self.to_database_queue.get()
                     message = "Sound_database_worker: got item from queue"
                     self.wurb_manager.wurb_logging.debug(message, short_message=message)
-                    if item == None:
-                        message = "Sound_database_worker: terminated with item: None"
-                        self.wurb_manager.wurb_logging.debug(message, short_message=message)
-                        break
-                    else:
-                        # extract datatime String from filename and transform dtime to datetimeformat for sqlite
-                        dtime = datetime.datetime.strptime(item["filename"].split('_')[1], "%Y%m%dT%H%M%S%z")
+                    try:
+                        if item == None:
+                            message = "Sound_database_worker: terminated with item: None"
+                            self.wurb_manager.wurb_logging.debug(message, short_message=message)
+                            break
+                        else:
+                            # extract datatime String from filename and transform dtime to datetimeformat for sqlite
+                            dtime = datetime.datetime.strptime(item["filename"].split('_')[1], "%Y%m%dT%H%M%S%z")
 
-                        item.update({'datetime': dtime})                        
+                            item.update({'datetime': dtime})                        
 
-                        message = "Sound_database_worker: extracted datetime from item"
-                        self.wurb_manager.wurb_logging.debug(message, short_message=message)
-                        
-                        # adding metadata to soundfile                     
-                        # await self.wurb_manager.wurb_metadata.append_settingMetadata(item["filepath"])                            
-                        bat, prob = await self.wurb_manager.wurb_metadata.append_fileMetadata(item)
-                                                
-                        message = "Sound_database_worker: added metadata to soundfile"
-                        self.wurb_manager.wurb_logging.debug(message, short_message=message)
-                        
-                        try:
-                            target_path = pathlib.Path(item["filepath"]).parent
-                            analyzed_path = pathlib.Path(target_path, "analyzed")
-                            if target_path.exists():
-                                if not analyzed_path.exists():
-                                    analyzed_path.mkdir()
+                            message = "Sound_database_worker: extracted datetime from item"
+                            self.wurb_manager.wurb_logging.debug(message, short_message=message)
+                            
+                            # adding metadata to soundfile                     
+                            # await self.wurb_manager.wurb_metadata.append_settingMetadata(item["filepath"])                            
+                            bat, prob = await self.wurb_manager.wurb_metadata.append_fileMetadata(item)
+                                                    
+                            message = "Sound_database_worker: added metadata to soundfile"
+                            self.wurb_manager.wurb_logging.debug(message, short_message=message)
+                            
+                            try:
+                                target_path = pathlib.Path(item["filepath"]).parent
+                                analyzed_path = pathlib.Path(target_path, "analyzed")
+                                if target_path.exists():
+                                    if not analyzed_path.exists():
+                                        analyzed_path.mkdir()
 
-                                # move file to "analyzed path"
-                                shutil.move(item["filepath"], str(analyzed_path)+"/"+item["filename"])
-                                # update filepath in item
-                                item.update({"filepath": str(analyzed_path)+"/"+item["filename"]})
+                                    # move file to "analyzed path"
+                                    shutil.move(item["filepath"], str(analyzed_path)+"/"+item["filename"])
+                                    # update filepath in item
+                                    item.update({"filepath": str(analyzed_path)+"/"+item["filename"]})
 
-                                if bat == "Noise":
-                                    prob = ""
-                                    message = "Probably Noise detected"
-                                else:
-                                    message = "{} detected, probability: {:1.2f}%".format(bat, prob*100)
-                                await database.insert_data(item, bat, prob)                            
-                                
-                                self.wurb_manager.wurb_logging.info(message, short_message = message)
+                                    if bat == "Noise":
+                                        prob = ""
+                                        message = "Probably Noise detected"
+                                    else:
+                                        message = "{} detected, probability: {:1.2f}%".format(bat, prob*100)
+                                    await database.insert_data(item, bat, prob)                            
+                                    
+                                    self.wurb_manager.wurb_logging.info(message, short_message = message)
 
-                                await self.set_bat_data(bat)
-                        except Exception as e:
-                            message = "Recorder: sound_database_worker: " + str(e)
-                            self.wurb_manager.wurb_logging.error(message, short_message=message)
-                        finally:
-                            self.to_database_queue.task_done                   
+                                    await self.set_bat_data(bat)
+                            except Exception as e:
+                                message = "Recorder: sound_database_worker: " + str(e)
+                                self.wurb_manager.wurb_logging.error(message, short_message=message)
+                    finally:
+                        self.to_database_queue.task_done                   
 
 
                 except asyncio.CancelledError:                   
