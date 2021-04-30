@@ -192,10 +192,10 @@ class WurbSettings(object):
         geo_source = self.current_location["geo_source"]
         # Manual.
         if geo_source == "geo-manual":
-            self.current_location["latitude_dd"] = self.current_location[
+            self.current_location["manual_latitude_dd"] = self.current_location[
                 "manual_latitude_dd"
             ]
-            self.current_location["longitude_dd"] = self.current_location[
+            self.current_location["manual_longitude_dd"] = self.current_location[
                 "manual_longitude_dd"
             ]
         # GPS.
