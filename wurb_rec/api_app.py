@@ -94,7 +94,7 @@ async def bat_data_as_file():
 
 @app.get("/get_all_bat_data/")
 async def all_bat_data():
-    query = "SELECT * FROM audiofiles"
+    query = "SELECT * FROM audiofiles WHERE auto_batid IS NOT 'unclassified'"
     global wurb_rec_manager
     c = await wurb_rec_manager.wurb_database.get_cursor()
     if c is not None:
