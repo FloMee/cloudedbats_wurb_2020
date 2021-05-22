@@ -246,7 +246,7 @@ class WurbSettings(object):
         last_gps_longitude = float(location_dict.get("last_gps_longitude_dd", "0.0"))
         geo_source = location_dict.get("geo_source", "")
         if (latitude == 0.0) or (longitude == 0.0):
-            if geo_source in ["geo-gps-or-manual"]:
+            if geo_source in ["geo-gps-or-manual", "geo-manual"]:
                 latitude = manual_latitude
                 longitude = manual_longitude
         if (latitude == 0.0) or (longitude == 0.0):
