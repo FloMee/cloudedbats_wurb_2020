@@ -44,18 +44,18 @@ async function recModeOnChange() {
 function recLenghtOnChange() {
   // disable classification option if rec length too long
   if (settings_rec_length_id.value > 12) {
-    settings_classification_algorithm_id.disabled = true;
+    document.getElementById("settings_classification_algorithm_id").disabled = true;
   } else if (checkClassificationPossibility()) {
-    settings_classification_algorithm_id.disabled = false;
+    document.getElementById("settings_classification_algorithm_id").disabled = false;
   }
 }
 
 function recTypeOnChange() {
   // disable classification option if time expansion is used
   if (settings_rec_type_id.value == "TE") {
-    settings_classification_algorithm_id.disabled = true;
+    document.getElementById("settings_classification_algorithm_id").disabled = true;
   } else if (checkClassificationPossibility()){
-    settings_classification_algorithm_id.disabled = false;
+    document.getElementById("settings_classification_algorithm_id").disabled = false;
   }
 }
 
@@ -158,7 +158,7 @@ async function saveSettings(settings_type) {
     else if (settings_type == "startup") {
       url_string = "/save-settings-startup/";
     } 
-    let classification_algorithm = (settings_classification_algorithm_id.disabled) ? 'classification_none' : settings_classification_algorithm_id.value
+    let classification_algorithm = (document.getElementById("settings_classification_algorithm_id").disabled) ? 'classification_none' : document.getElementById("settings_classification_algorithm_id").value
     let settings = {
       rec_mode: detector_mode_select_id.value,
       file_directory: settings_file_directory_id.value,

@@ -24,7 +24,7 @@ function modeSelectOnChange(update_detector) {
   hideDivision(div_manual_triggering_id);
   hideDivision(div_detector_power_off_id);
   if (selected_value == "mode-off") {
-      if (checkClassificationPossibility()) {settings_classification_algorithm_id.disabled = false;}
+      if (checkClassificationPossibility()) {document.getElementById("settings_classification_algorithm_id").disabled = false;}
       // stopRecording()
     if (update_detector) {
       saveSettings()
@@ -32,7 +32,7 @@ function modeSelectOnChange(update_detector) {
   }
   else if (selected_value == "mode-on") {
 
-      settings_classification_algorithm_id.disabled = true;
+    document.getElementById("settings_classification_algorithm_id").disabled = true;
       
       if (update_detector) {
       saveSettings()
@@ -40,14 +40,14 @@ function modeSelectOnChange(update_detector) {
     // startRecording()
   }
   else if (selected_value == "mode-auto") {
-      if (checkClassificationPossibility()) {settings_classification_algorithm_id.disabled = false;}
+      if (checkClassificationPossibility()) {document.getElementById("settings_classification_algorithm_id").disabled = false;}
       if (update_detector) {
       saveSettings()
     }
     // startRecording()
   }
   else if (selected_value == "mode-manual") {
-      if (checkClassificationPossibility()) {settings_classification_algorithm_id.disabled = false;}
+      if (checkClassificationPossibility()) {document.getElementById("settings_classification_algorithm_id").disabled = false;}
       showDivision(div_manual_triggering_id);
       if (update_detector) {
       saveSettings()
@@ -55,14 +55,14 @@ function modeSelectOnChange(update_detector) {
     // startRecording()
   }
   else if (selected_value == "mode-scheduler-on") {
-      settings_classification_algorithm_id.disabled = true;
+    document.getElementById("settings_classification_algorithm_id").disabled = true;
       // stopRecording()
     if (update_detector) {
       saveSettings()
     }
   }
   else if (selected_value == "mode-scheduler-auto") {
-      if (checkClassificationPossibility()) {settings_classification_algorithm_id.disabled = false;}
+      if (checkClassificationPossibility()) {document.getElementById("settings_classification_algorithm_id").disabled = false;}
       // stopRecording()
     if (update_detector) {
       saveSettings()
