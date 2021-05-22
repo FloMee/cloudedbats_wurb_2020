@@ -181,41 +181,41 @@ class WurbRecorder(wurb_rec.SoundStreamManager):
         self.rec_length_s = 6  # Unit: sec.
         self.rec_timeout_before_restart_s = 30  # Unit: sec.
 
-        self.bat_detected_event = None
-        self.bat_data = {}
+        # self.bat_detected_event = None
+        # self.bat_data = {}
 
 
-    async def get_bat_data(self):
-        try:            
-            return self.bat_data
+    # async def get_bat_data(self):
+    #     try:            
+    #         return self.bat_data
 
-        except Exception as e:
-            messsage = "Recorder: get_bat_data: " +  str(e)
-            self.wurb_manager.wurb_logging.error(message, short_message=message)
+    #     except Exception as e:
+    #         messsage = "Recorder: get_bat_data: " +  str(e)
+    #         self.wurb_manager.wurb_logging.error(message, short_message=message)
 
-    async def set_bat_data(self, bat, amount = 1):
-        try:
-            self.bat_data = {"bat": bat, "amount": amount}
-            # Create a new event and release all from the old event.
-            old_bat_detected_event = self.bat_detected_event
-            self.bat_detected_event = asyncio.Event()
-            if old_bat_detected_event:
-                old_bat_detected_event.set()
+    # async def set_bat_data(self, bat, amount = 1):
+    #     try:
+    #         self.bat_data = {"bat": bat, "amount": amount}
+    #         # Create a new event and release all from the old event.
+    #         old_bat_detected_event = self.bat_detected_event
+    #         self.bat_detected_event = asyncio.Event()
+    #         if old_bat_detected_event:
+    #             old_bat_detected_event.set()
 
-        except Exception as e:
-            messsage = "Recorder: set_bat_data: " +  str(e)
-            self.wurb_manager.wurb_logging.error(message, short_message=message)
+    #     except Exception as e:
+    #         messsage = "Recorder: set_bat_data: " +  str(e)
+    #         self.wurb_manager.wurb_logging.error(message, short_message=message)
         
 
-    async def get_bat_detected_event(self):
-        """"""
-        try:
-            if self.bat_detected_event == None:
-                self.bat_detected_event = asyncio.Event()
-            return self.bat_detected_event
-        except Exception as e:
-            messsage = "Recorder: bat_detected_event: " +  str(e)
-            self.wurb_manager.wurb_logging.error(message, short_message=message)
+    # async def get_bat_detected_event(self):
+    #     """"""
+    #     try:
+    #         if self.bat_detected_event == None:
+    #             self.bat_detected_event = asyncio.Event()
+    #         return self.bat_detected_event
+    #     except Exception as e:
+    #         messsage = "Recorder: bat_detected_event: " +  str(e)
+    #         self.wurb_manager.wurb_logging.error(message, short_message=message)
 
     async def get_notification_event(self):
         """ """
@@ -594,7 +594,7 @@ class WurbRecorder(wurb_rec.SoundStreamManager):
             # waiting 40 seconds to be sure models for batclassify are loaded
             await asyncio.sleep(40)
             message = "Process BatClassify started"
-            self.wurb_logging.info(message, short_message=message)
+            self.wurb_logging.debug(message, short_message=message)
             while True:
                 try:
                     item = await self.to_classify_queue.get()                
@@ -613,8 +613,8 @@ class WurbRecorder(wurb_rec.SoundStreamManager):
                             # filepath = str(target_path) + "/" + item
                             proc.expect('inputfile:')   
                             proc.sendline(str(filepath))
-                            message = "Analysing sound file..."
-                            self.wurb_manager.wurb_logging.info(message, short_message = message)                            
+                            # message = "Analysing sound file..."
+                            # self.wurb_manager.wurb_logging.info(message, short_message = message)                            
                             proc.expect('\n')
                             proc.expect('\n')
                             stdout = proc.before.decode()                      
@@ -686,15 +686,18 @@ class WurbRecorder(wurb_rec.SoundStreamManager):
                                         analyzed_path.mkdir()
 
                                     # move file to "analyzed path"
-                                    shutil.move(item["filepath"], str(analyzed_path)+"/"+item["filename"])
+                                    target_file = pathlib.Path(analyzed_path, bat + "_" + f"{prob*100:.0f}" + "_" + item["filename"])
+                                    # shutil.move(item["filepath"], str(analyzed_path)+"/"+item["filename"])
+                                    shutil.move(item["filepath"], target_file)
                                     # update filepath in item
-                                    item.update({"filepath": str(analyzed_path)+"/"+item["filename"]})
+                                    # item.update({"filepath": str(analyzed_path)+"/"+item["filename"]})
+                                    item.update({"filepath": str(target_file)})
 
-                                    if bat == "Noise":
+                                    if bat == "unclassified":
                                         prob = ""
-                                        message = "Probably Noise detected"
+                                        message = "Due to low probability not classified"
                                     else:
-                                        message = "{} detected, probability: {:1.2f}%".format(bat, prob*100)
+                                        message = "Soundfile classified as {}; probability: {:1.2f}%".format(bat, prob*100)
                                     await database.insert_data(item, bat, prob)                            
                                     
                                     self.wurb_manager.wurb_logging.info(message, short_message = message)
@@ -799,7 +802,7 @@ class WaveFileWriter:
         if rec_type == "TE":
             message_rec_type = "(TE) "
         message = "Sound file " + message_rec_type + "to: " + target_path_str
-        self.wurb_logging.info(message, short_message=message)
+        self.wurb_logging.debug(message, short_message=message)
         # Logging debug.
         message = "Filename: " + filename
         self.filepath = filenamepath
