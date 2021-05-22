@@ -28,6 +28,9 @@ class WurbScheduler(object):
         """ """
         if not self.main_loop_task:
             self.main_loop_task = asyncio.create_task(self.main_loop())
+            
+            message = "Scheduler started."
+            self.wurb_manager.wurb_logging.debug(message)
 
     async def shutdown(self):
         """ """
@@ -65,6 +68,8 @@ class WurbScheduler(object):
         start_event_local, stop_event_local = await self.calculate_start_stop()
         if (start_event_local is None) or (stop_event_local is None):
             # Can't calculate start or stop.
+            message = "Wurb Sheduler: Can't calculate start or stop."
+            self.wurb_manager.wurb_logging.debug(message) 
             await self.wurb_manager.stop_rec()
             return
 
@@ -122,6 +127,8 @@ class WurbScheduler(object):
         if stop_event in ["off-sunset", "off-dusk", "off-dawn", "off-sunrise"]:
             if not solartime_dict:
                 # Lat/long needed to calculate stop.
+                message = "Wurb scheduler: no solartime_dict to calculate start/stop events"
+                self.wurb_manager.wurb_logging.debug(message)
                 return (None, None)
             stop_event = stop_event.replace("off-", "")
             stop_event_utc = solartime_dict.get(stop_event, None)
@@ -136,7 +143,7 @@ class WurbScheduler(object):
         # Adjust time.
         start_event_local += datetime.timedelta(minutes=int(float(start_event_adjust)))
         stop_event_local += datetime.timedelta(minutes=int(float(stop_event_adjust)))
-
+        
         return (start_event_local, stop_event_local)
 
     async def get_solartime_data(self, print_new=True):
@@ -144,6 +151,8 @@ class WurbScheduler(object):
         latitude, longitude = self.wurb_settings.get_valid_location()
         if (latitude == 0.0) or (longitude == 0.0):
             # No lat/long found.
+            message = "Wurb scheduler: Latitude or Longitude not set."
+            self.wurb_manager.wurb_logging.debug(message)
             return None
 
         date_local = datetime.datetime.now().date()
@@ -179,6 +188,8 @@ class WurbScheduler(object):
                     message += " Sunrise: " + sunrise_local.strftime("%H:%M:%S")
                     self.wurb_manager.wurb_logging.info(message, short_message=message)
             else:
+                message = "Wurb scheduler: solartime dict not complete."
+                self.wurb_manager.wurb_logging.debug(message)
                 return None
 
         return solartime_dict
