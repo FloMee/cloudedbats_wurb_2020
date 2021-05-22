@@ -21,3 +21,5 @@ RPi.GPIO
 # Visual Studio Code.
 pylint
 black
+pexpect
+pandas
