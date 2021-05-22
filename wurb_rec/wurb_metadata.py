@@ -10,8 +10,8 @@ class WurbMetadata(object):
         self.wurb_manager = wurb_manager
         self.settingMetadata = None
         self.locationMetadata = {}
-        guano.GuanoFile.register('BatBase', ['Detection Algorithm', 'GPS Source', 'Microphone', 'Classifier', 'Recording Type'], str)
-        guano.GuanoFile.register('BatBase', ['Sensitivity', 'HP Detection'], float)
+        guano.GuanoFile.register('Wurb', ['Detection Algorithm', 'GPS Source', 'Microphone', 'Classifier', 'Recording Type', 'Version'], str)
+        guano.GuanoFile.register('Wurb', ['Sensitivity', 'HP Detection'], float)
 
     async def set_settingMetadata(self):
         self.settingMetadata = await self.wurb_manager.wurb_settings.get_settings()
@@ -23,7 +23,8 @@ class WurbMetadata(object):
         location = await self.wurb_manager.wurb_settings.get_location()
         self.settingMetadata.update({'deviceName': self.wurb_manager.wurb_recorder.device_name,
             'Samplerate': self.wurb_manager.wurb_recorder.sampling_freq_hz,
-            'Hardware': self.wurb_manager.wurb_rpi.get_hardware_info()})
+            'Hardware': self.wurb_manager.wurb_rpi.get_hardware_info(),
+            'Version': wurb_rec.__version__},)
         self.settingMetadata.update(location)
 
     async def update_location(self, location_dict):
@@ -45,13 +46,14 @@ class WurbMetadata(object):
             # if self.settingMetadata["geo_source_option"] == "geo-manual":
             #      g["Loc Position"] = (float(self.settingMetadata["manual_latitude_dd"]), float(self.settingMetadata["manual_longitude_dd"]))
             if self.locationMetadata:
-                g["Batbase|GPS Source"] = self.locationMetadata["geo_source"]
+                g["Wurb|GPS Source"] = self.locationMetadata["geo_source"]
                 g["Loc Position"] = (float(self.locationMetadata["latitude"]), float(self.locationMetadata["longitude"]))
-            g["Batbase|HP Detection"] = float(self.settingMetadata["detection_limit_khz"])
-            g["Batbase|Microphone"] = self.settingMetadata["deviceName"]
-            g["Batbase|Sensitivity"] = float(self.settingMetadata["detection_sensitivity_dbfs"])            
-            g["Batbase|Detection Algorithm"] = self.settingMetadata["detection_algorithm"]
-            g["Batabse|Recording Type"] = self.settingMetadata["rec_type"]
+            g["Wurb|HP Detection"] = float(self.settingMetadata["detection_limit_khz"])
+            g["Wurb|Microphone"] = self.settingMetadata["deviceName"]
+            g["Wurb|Sensitivity"] = float(self.settingMetadata["detection_sensitivity_dbfs"])            
+            g["Wurb|Detection Algorithm"] = self.settingMetadata["detection_algorithm"]
+            g["Wurb|Recording Type"] = self.settingMetadata["rec_type"]
+            g["Wurb|Version"] = self.settingMetadata["Version"]
             
             g.write(make_backup=False)
         except Exception as e:
@@ -59,13 +61,33 @@ class WurbMetadata(object):
             self.wurb_manager.wurb_logging.error(message, short_message=message)
 
     async def append_fileMetadata(self, metadata):
+        # custom limits for batclassify
+        bc_limit = {"Bbar":0.6,
+                    "Malc":0.7,
+                    "Mbec":0.7,
+                    "MbraMmys":0.7,
+                    "Mdau":0.7,
+                    "Mnat":0.7,
+                    "NSL":0.9,
+                    "Paur":0.8,
+                    "Ppip":0.9,
+                    "Ppyg":0.9,
+                    "Rfer":0.9,
+                    "Rhip":0.9}
         # detect highest probability in classification
-        prob = 0.8
-        bat = "Noise"
+        prob = 0
+        bat = "unclassified"
         for i in metadata["batclassify"]:
-            if metadata["batclassify"][i]>prob:
+            if metadata["batclassify"][i]>bc_limit[i] and metadata["batclassify"][i]>prob:
                 prob=metadata["batclassify"][i]
                 bat=i
+        
+        # prob = 0.8
+        # bat = "Noise"
+        # for i in metadata["batclassify"]:
+        #     if metadata["batclassify"][i]>prob:
+        #         prob=metadata["batclassify"][i]
+        #         bat=i
         
         # alternativ algorith to detect highest prob in classification
         # bc = item["batclassify"]
@@ -77,7 +99,7 @@ class WurbMetadata(object):
             g["Original Filename"] = metadata["filename"]
             g["Timestamp"] = metadata["datetime"]
             g["Species Auto ID"] = bat
-            g["Batbase|Classifier"] = "Batclassify"
+            g["Wurb|Classifier"] = "BatClassify"
 
             g.write(make_backup=False)
 
