@@ -687,6 +687,28 @@
                                     </div>
                                 </div>
                             </div>
+                            <hr>
+
+                            <div class="field is-horizontal">
+                                <div class="field-body">
+                                    <div class="control">
+                                        <button style="margin:5px;" id="settings_save_button_id"
+                                            class="button is-info is-rounded" onclick="saveSettings()">
+                                            Save
+                                        </button>
+                                        <button style="margin:5px;" id="settings_reset_button_id"
+                                            class="button is-info is-rounded" onclick="getSettings()">
+                                            Cancel-->
+                                            <!-- Last saved -->
+                                        <!--</button>-->
+                                        <!-- <button style="margin:5px;" id="settings_default_button_id" -->
+                                            <!-- class="button is-info is-rounded" onclick="getDefaultSettings()"> -->
+                                            <!-- User default -->
+                                        <!-- </button> -->
+                                    </div>
+                                </div>
+                            </div>
+
                         </article>                            
                         <!--</div>-->
                         <!--<div class="tile is-parent is-vertical">
@@ -747,30 +769,9 @@
                     </div>             
                 </div>         
                     
-                    <!--<div class="tile is-parent is-vertical">-->
-                            <hr>
+                    <!--<div class="tile is-parent is-vertical">-->                            
 
-                            <!--<div class="field is-horizontal">
-                                <div class="field-body">
-                                    <div class="control">
-                                        <button style="margin:5px;" id="settings_save_button_id"
-                                            class="button is-info is-rounded" onclick="saveSettings()">
-                                            Save
-                                        </button>
-                                        <button style="margin:5px;" id="settings_reset_button_id"
-                                            class="button is-info is-rounded" onclick="getSettings()">
-                                            Cancel-->
-                                            <!-- Last saved -->
-                                        <!--</button>-->
-                                        <!-- <button style="margin:5px;" id="settings_default_button_id" -->
-                                            <!-- class="button is-info is-rounded" onclick="getDefaultSettings()"> -->
-                                            <!-- User default -->
-                                        <!-- </button> -->
-                                    <!--</div>
-                                </div>
-                            </div>
-
-                        </article>
+                        <!--</article>
 
                     </div>-->
                 <!--</div>-->
@@ -862,17 +863,23 @@
                     <article class="tile is-child box has-background-grey-lighter">
                         <!-- Content. -->
                         <p class="title is-4">About</p>
-                        <p class="subtitle is-5">CloudedBats - WURB 2020<br>
+                        <p class="subtitle is-5">CloudedBats - WURB 2020 (FloMee Fork)<br>
                             Version: {{ wurb_version }}</p>
                         <div class="content">
                             <p>
-                                This is a part of the open source
+                                This fork of the open source
                                 <a href="http://cloudedbats.org">CloudedBats.org</a>
-                                software project.
+                                software project was developed within the scope of a 
+                                bachelor thesis at HTW Dresden in order to provide a
+                                long term monitoring system for bats at HTW Dresden.
                                 <br>
                                 More information and source code at GitHub:
+                                <a href="https://github.com/FloMee/cloudedbats_wurb_2020">
+                                    FloMee/cloudedbats_wurb_2020</a>.
+                                <br>
+                                Original project and source code at GitHub:
                                 <a href="https://github.com/cloudedbats/cloudedbats_wurb_2020">
-                                    cloudedbats_wurb_2020</a>.
+                                    FloMee/cloudedbats_wurb_2020</a>.
                                 <br>
                                 REST API for programmatic control:
                                 <a href="/docs">OpenAPI 3.0</a>.
@@ -882,7 +889,8 @@
                             </p>
                             <p>
                                 Developed by: Arnold&nbsp;Andreasson,&nbsp;Sweden.<br />
-                                Contact and feedback: info@cloudedbats.org
+                                Adapted and extended by: Florian Meerheim. <br/>
+                                Contact and feedback: florian.meerheim@htw-dresden.de
                             </p>
                         </div>
                     </article>
