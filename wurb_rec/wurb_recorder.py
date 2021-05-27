@@ -562,13 +562,14 @@ class WurbRecorder(wurb_rec.SoundStreamManager):
                             # File.
                             if item["status"] == "close_file":
                                 if wave_file_writer:
+                                    if wave_file_writer.wave_file is not None:
+                                        wave_filename = wave_file_writer.filename
+                                        wave_filepath = wave_file_writer.filepath
+                                        await self.wurb_manager.wurb_metadata.append_settingMetadata(str(wave_filepath))
+                                        if self.wurb_settings.get_setting('classification_algorithm') == 'classification-batclassify':
+                                            await self.to_classify_queue.put({"filename": wave_filename, "filepath": wave_filepath}) 
                                     wave_file_writer.close()
-                                    wave_filename = wave_file_writer.filename
-                                    wave_filepath = wave_file_writer.filepath
-                                    await self.wurb_manager.wurb_metadata.append_settingMetadata(str(wave_filepath))
                                     wave_file_writer = None
-                                    if self.wurb_settings.get_setting('classification_algorithm') == 'classification-batclassify':
-                                        await self.to_classify_queue.put({"filename": wave_filename, "filepath": wave_filepath}) 
                     finally:
                         self.to_target_queue.task_done()
                         await asyncio.sleep(0)
