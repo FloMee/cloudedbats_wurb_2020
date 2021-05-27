@@ -703,7 +703,7 @@ class WurbRecorder(wurb_rec.SoundStreamManager):
                                     
                                     self.wurb_manager.wurb_logging.info(message, short_message = message)
 
-                                    await self.set_bat_data(bat)
+                                    # await self.set_bat_data(bat)
                             except Exception as e:
                                 message = "Recorder: sound_database_worker: " + str(e)
                                 self.wurb_manager.wurb_logging.error(message, short_message=message)
