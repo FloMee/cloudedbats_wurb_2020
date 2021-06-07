@@ -630,7 +630,7 @@ class WurbRecorder(wurb_rec.SoundStreamManager):
 
 
                 except asyncio.CancelledError:
-                    proc.close()
+                    # proc.close()
                     break
                 except Exception as e:
                     message = "Recorder: sound_classify_worker: " + str(e)
@@ -640,12 +640,13 @@ class WurbRecorder(wurb_rec.SoundStreamManager):
                     await asyncio.sleep(10)
         
         except asyncio.CancelledError:
-            proc.close()
+            # proc.close()
+            pass
         except Exception as e:
             message = "Recorder: sound_classify_worker: " + str(e)
             self.wurb_manager.wurb_logging.error(message, short_message=message)
         finally:
-            pass
+            proc.close()
 
     async def sound_database_worker(self):
         # target_path = self.wurb_manager.wurb_rpi.get_wavefile_target_dir_path()
