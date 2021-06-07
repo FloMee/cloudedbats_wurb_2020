@@ -74,6 +74,7 @@ class WurbScheduler(object):
         try:
             rec_mode = self.wurb_settings.get_setting("rec_mode")
             self.current_mode = rec_mode
+            rec_status = await self.wurb_manager.wurb_recorder.get_rec_status()
             if rec_mode in ["mode-on", "mode-auto", "mode-manual"]:
                 self.last_used_scheduler_state = ""
                 self.current_scheduler_state = ""
@@ -81,9 +82,9 @@ class WurbScheduler(object):
             if rec_mode in ["mode-off"]:
                 self.last_used_scheduler_state = ""
                 self.current_scheduler_state = ""
-                await self.wurb_manager.stop_rec()
+                await self.wurb_manager.stop_rec(True)
             if rec_mode in ["mode-scheduler-on", "mode-scheduler-auto"]:
-                await self.check_scheduler()
+                await self.check_scheduler(rec_status)
             # Logging of changes in state.
             if self.current_mode != self.last_used_mode:
                 mode_humans = self.user_mode_for_humans.get(self.current_mode, "Undefined")
@@ -99,21 +100,21 @@ class WurbScheduler(object):
             message = "Scheduler update status: " + str(e)
             self.wurb_manager.wurb_logging.error(message, short_message=message)
 
-    async def check_scheduler(self):
+    async def check_scheduler(self, rec_status):
         """ """
         # Start/stop time.
         start_event_local, stop_event_local = await self.calculate_start_stop()
         if (start_event_local is None) or (stop_event_local is None):
             # Can't calculate start or stop.
             self.current_scheduler_state = "Time or position is missing."
-            await self.wurb_manager.stop_rec()
+            await self.wurb_manager.stop_rec(True)
             return
 
         # Evaluate action.
         now_local = datetime.datetime.now().astimezone()
         if start_event_local == stop_event_local:
             # Always off.
-            await self.wurb_manager.stop_rec()
+            await self.wurb_manager.stop_rec(True)
         if start_event_local < stop_event_local:
             # Same day.
             if (start_event_local < now_local) and (now_local < stop_event_local):
@@ -121,7 +122,8 @@ class WurbScheduler(object):
                 await self.wurb_manager.start_rec()
             else:
                 self.current_scheduler_state = "Recording not active."
-                await self.wurb_manager.stop_rec()
+                if rec_status == "Microphone is on.":
+                    await self.wurb_manager.stop_rec()
         else:
             # Different days.
             start_local_new = start_event_local
@@ -137,7 +139,8 @@ class WurbScheduler(object):
                 await self.wurb_manager.start_rec()
             else:
                 self.current_scheduler_state = "Recording not active."
-                await self.wurb_manager.stop_rec()
+                if rec_status == "Microphone is on.":
+                    await self.wurb_manager.stop_rec()
 
     async def calculate_start_stop(self):
         """ """
