@@ -26,8 +26,6 @@ async function stackedBarChart(mode = "day") {
   
   //define daterange
   const daterange = getDateRange(x, mode);
-  // x.ticks(daterange.length)
-  // d3.timeDays(x.domain()[0], x.domain()[1])
   
   let xBand = d3.scaleBand().domain(daterange)
                   .range([margin.left, width - margin.right])
@@ -40,7 +38,7 @@ async function stackedBarChart(mode = "day") {
   let yRef = y.copy();
   // define xAxis
   function xAxis(g, xScale, mode) {
-      // set the number of ticks depending on the length of the x-axis in time; max 10 ticks
+      // set the number of ticks depending on the length of the x-axis in time; max 8 ticks
       let numberOfTicks = (getDateRange(xScale, mode).length > 8) ? 8 : getDateRange(xScale, mode).length;
       return g.attr("transform", `translate(0,${height - margin.bottom})`)
           .call(d3.axisBottom(xScale).tickSizeOuter(0).ticks(numberOfTicks))
@@ -80,7 +78,6 @@ async function stackedBarChart(mode = "day") {
                 .html(leg.outerHTML)
                 .append('svg')
                 .attr('viewBox', [0, 0, width, height]);
-                // .call(zoom);
 
   const gx = svg.append("g");
   const gy = svg.append("g");
@@ -92,10 +89,6 @@ async function stackedBarChart(mode = "day") {
   .attr("y",margin.top)
   .attr("width",width - margin.left - margin.right)
   .attr("height",height - margin.top - margin.bottom);
-  // .attr("x",150)
-  // .attr("y",150)
-  // .attr("height",30)
-  // .attr("width",30);
 
   let rect = svg.append('g')
       .attr("clip-path", "url(#clip)")
@@ -146,7 +139,6 @@ async function stackedBarChart(mode = "day") {
       // pure translation?
       doX && gx.call(zoomX.translateBy, (t.x - z.x) / tx().k, 0);
       doY && gy.call(zoomY.translateBy, 0, (t.y - z.y) / ty().k);
-      // doY && svg.selectAll(".grid").call(grid, y)
     } else {
       // if not, we're zooming on a fixed point
       doX && gx.call(zoomX.scaleBy, shift ? 1 / k : k, point);
@@ -179,7 +171,6 @@ async function stackedBarChart(mode = "day") {
       .style("stroke", "black")
       .style("opacity", 1)
   }
-
   function mousemove(event) {      
     let date = this.__data__.data.date;
     let value = this.__data__[1] - this.__data__[0];
