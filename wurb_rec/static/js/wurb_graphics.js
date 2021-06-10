@@ -41,7 +41,7 @@ async function stackedBarChart(mode = "day") {
   // define xAxis
   function xAxis(g, xScale, mode) {
       // set the number of ticks depending on the length of the x-axis in time; max 10 ticks
-      let numberOfTicks = (getDateRange(x, mode).length > 10) ? 10 : getDateRange(xScale, mode).length;
+      let numberOfTicks = (getDateRange(xScale, mode).length > 8) ? 8 : getDateRange(xScale, mode).length;
       return g.attr("transform", `translate(0,${height - margin.bottom})`)
           .call(d3.axisBottom(xScale).tickSizeOuter(0).ticks(numberOfTicks))
           .call(g => g.selectAll(".domain").remove());     
@@ -79,9 +79,11 @@ async function stackedBarChart(mode = "day") {
   const svg = chartDiv
                 .html(leg.outerHTML)
                 .append('svg')
-                .attr('viewBox', [0, 0, width, height])
-                .call(zoom);
-  
+                .attr('viewBox', [0, 0, width, height]);
+                // .call(zoom);
+
+  const gx = svg.append("g");
+  const gy = svg.append("g");
   
   let clippath = svg.append('defs').append("clipPath")
   .attr("id", "clip")
@@ -116,6 +118,45 @@ async function stackedBarChart(mode = "day") {
         .on("mouseover", mouseover)
         .on("mousemove", mousemove)
         .on("mouseleave", mouseleave);
+
+  // z holds a copy of the previous transform, so we can track its changes
+  let z = d3.zoomIdentity;
+  const extent = [[margin.left,0], [width - margin.right, height - margin.bottom]];
+
+  // set up the ancillary zooms and an accessor for their transforms
+  const zoomX = d3.zoom().scaleExtent([1, daterange.length]).translateExtent(extent).extent(extent);
+  const zoomY = d3.zoom().scaleExtent([1, daterange.length]).translateExtent(extent).extent(extent);
+  const tx = () => d3.zoomTransform(gx.node());
+  const ty = () => d3.zoomTransform(gy.node());
+  gx.call(zoomX).attr("pointer-events", "none");
+  gy.call(zoomY).attr("pointer-events", "none");
+
+  // active zooming
+  const zoom = d3.zoom().on("zoom", function(e) {
+    const t = e.transform;
+    const k = t.k / z.k;
+    const point = center(e, this);
+
+    // is it on an axis? is the shift key pressed?
+    const doX = point[0] > x.range()[0];
+    const doY = point[1] < y.range()[0];
+    const shift = e.sourceEvent && e.sourceEvent.shiftKey;
+
+    if (k === 1) {
+      // pure translation?
+      doX && gx.call(zoomX.translateBy, (t.x - z.x) / tx().k, 0);
+      doY && gy.call(zoomY.translateBy, 0, (t.y - z.y) / ty().k);
+      // doY && svg.selectAll(".grid").call(grid, y)
+    } else {
+      // if not, we're zooming on a fixed point
+      doX && gx.call(zoomX.scaleBy, shift ? 1 / k : k, point);
+      doY && gy.call(zoomY.scaleBy, k, point);
+  }
+  
+    z = t;
+
+    redraw();
+  });
 
 
   // define the div for the tooltip
@@ -157,17 +198,6 @@ async function stackedBarChart(mode = "day") {
       // .style("opacity", 0.8)
   }
   
-  // add the x-axis to the svg
-  svg.append('g')
-    .classed('x-axis', true)
-    .call(xAxis, x, mode)
-    .call(adjustTextLabels);
-  
-  // add the y-axis to the svg
-  svg.append('g')
-    .classed('y-axis', true)
-    .call(yAxis, y);
-
   // add the grid to the svg   
   svg.append('g')
     .classed('grid', true)
@@ -188,6 +218,8 @@ async function stackedBarChart(mode = "day") {
 
   // function to transform from stacked to grouped
   function transitionGrouped() {
+    const xr = tx().rescaleX(x);
+    const yr = ty().rescaleY(y);
     // adjust y-axis
     // y.domain([0, d3.max(_.flatMapDeep(series, d => _.map(d, d=> d[1] - d[0])))*1.1]);
     // change class of bars
@@ -198,20 +230,22 @@ async function stackedBarChart(mode = "day") {
     rect.transition()
         .duration(500)
         .delay((d, i) => i * 20)
-        .attr("x", (d, i) => x(d.data.date) + xBand.bandwidth() / n * d.index)
+        .attr("x", (d, i) => xr(d.data.date) + xBand.bandwidth() / n * d.index)
         // .attr("x", (d, i) => x(d.data.date) - xBand.bandwidth()/2 + xBand.bandwidth() / n * d.index)
         .attr("width", xBand.bandwidth() / n)
       .transition()
-        .attr("y", d => y(d[1] - d[0]))
-        .attr("height", d => y(0) - y(d[1] - d[0]));
+        .attr("y", d => yr(d[1] - d[0]))
+        .attr("height", d => yr(0) - yr(d[1] - d[0]));
     // update y-axis and grid
-    svg.selectAll(".y-axis").call(yAxis, y);
+    svg.selectAll(".y-axis").call(yAxis, yr);
     svg.selectAll('.grid').selectAll('g').remove();
-    svg.selectAll(".grid").call(grid, y);
+    svg.selectAll(".grid").call(grid, yr);
   }
 
   // function to transform from grouped to stacked 
   function transitionStacked() {
+    const xr = tx().rescaleX(x);
+    const yr = ty().rescaleY(y);
     // adjust y-axis
     // y.domain([0, d3.max(_.flatMapDeep(series, d => _.map(d, d=> d[1])))*1.1]);
     // change class of bars
@@ -221,72 +255,58 @@ async function stackedBarChart(mode = "day") {
     rect.transition()
         .duration(500)
         .delay((d, i) => i * 20)
-        .attr("y", d => y(d[1]))
-        .attr("height", d => y(d[0]) - y(d[1]))
+        .attr("y", d => yr(d[1]))
+        .attr("height", d => yr(d[0]) - yr(d[1]))
       .transition()
-        .attr("x", (d, i) => x(d.data.date))
+        .attr("x", (d, i) => xr(d.data.date))
         // .attr("x", (d, i) => x(d.data.date) - xBand.bandwidth()/2)
         .attr("width", xBand.bandwidth());
     // update y-axis and grid
-    svg.selectAll(".y-axis").call(yAxis, y);
+    svg.selectAll(".y-axis").call(yAxis, yr);
     svg.selectAll('.grid').selectAll('g').remove();
-    svg.selectAll('.grid').call(grid, y);
-  }
-
-  //define zoom-behavior
-  function zoom(svg) {
-    // const extent = [[margin.left, margin.top], [width - margin.right, height - margin.top]];
-    const extent = [[margin.left,0], [width - margin.right, height - margin.bottom]];
-    
-    svg.call(d3.zoom()
-        .scaleExtent([1, daterange.length])
-        .translateExtent(extent)
-        .extent(extent)
-        .on("zoom", zoomed));
-    let yExtent = [0, d3.max(_.flatMap(series).filter(function(d) {d
-      let dt = x(d.data.date);
-      return dt > 0 && dt < width;
-    }), function(d) {return d[1];})*1.1]
-      
-    y.domain(yExtent);
-    function zoomed(event) {
-      let n = series.length;
-
-      let point = d3.pointer(event, this);
-      let doX = point[0] > x.range()[0];
-      let doY = point[1] < y.range()[0];
-      if (doX) {
-        x = event.transform.rescaleX(xRef);
-      }
-      if (doY) {
-        y = event.transform.rescaleY(yRef);
-      }
-      t = event.transform;
-      // let numberOfTicks = (getDateRange(x, mode).length > 10) ? 10 : getDateRange(x, mode ).length;
-      //x.ticks(getDateRange(x, mode).length);
-      //x.range([margin.left, width - margin.right].map(d => event.transform.applyX(d)));
-      doX && xBand.range([margin.left, width - margin.right].map(d => event.transform.applyX(d)));
-      //svg.selectAll(".bars rect").attr("x", d => x(d.data.date)).attr("width", x.bandwidth());
-      // svg.selectAll(".grouped rect").attr("x", d => x(d.data.date) - xBand.bandwidth()/2 + xBand.bandwidth() / n * d.index).attr("width", xBand.bandwidth() / n);          
-      doX && svg.selectAll(".grouped rect").attr("x", d => x(d.data.date) + xBand.bandwidth() / n * d.index).attr("width", xBand.bandwidth() / n);  
-      doY && svg.selectAll(".grouped rect").attr("y", d => y(d[1]-d[0])).attr("height", d => y(0) - y(d[1] - d[0]));
-      // svg.selectAll(".stacked rect").attr("x", d => x(d.data.date) - xBand.bandwidth()/2).attr("width", xBand.bandwidth());
-      doX && svg.selectAll(".stacked rect").attr("x", d => x(d.data.date)).attr("width", xBand.bandwidth());
-      doY && svg.selectAll(".stacked rect").attr("y", d => y(d[1])).attr("height", d => y(d[0]) - y(d[1]));
-      doX && svg.selectAll(".x-axis").call(xAxis, x, mode).call(adjustTextLabels);
-      doY && svg.selectAll(".y-axis").call(yAxis, y)
-      doY && svg.selectAll(".grid").call(grid, y)
-
-    }
+    svg.selectAll('.grid').call(grid, yr);
   }
 
   function updateStyle(layout) {
     if (layout === "stacked") transitionStacked();
     else transitionGrouped();
   }
+  
+  function redraw() {
+    let n = series.length;
+    const xr = tx().rescaleX(x);
+    const yr = ty().rescaleY(y);
+    gx.call(xAxis, xr, mode).call(adjustTextLabels);
+    gy.call(yAxis, yr);
+    xBand.domain(getDateRange(xr, mode))
+       
+    svg.selectAll(".grid").call(grid, yr)
+        
+    svg.selectAll(".stacked rect")
+      .attr("x", d => xr(d.data.date))
+      .attr("width", xBand.bandwidth())
+      .attr("y", d => yr(d[1]))
+      .attr("height", d => yr(d[0]) - yr(d[1]));
+    
+    svg.selectAll(".grouped rect")
+      .attr("x", d => xr(d.data.date) + xBand.bandwidth() / n * d.index)
+      .attr("width", xBand.bandwidth() / n)
+      .attr("y", d => yr(d[1]-d[0]))
+      .attr("height", d => yr(0) - yr(d[1] - d[0]));
+    
+  }
 
-  return Object.assign(svg.node(), {updateStyle});      
+  function center(event, target) {
+    if (event.sourceEvent) {
+      const p = d3.pointers(event, target);
+      return [d3.mean(p, d => d[0]), d3.mean(p, d => d[1])];
+    }
+    return [width / 2, height / 2];
+  }
+
+  return Object.assign(svg.call(zoom).call(zoom.transform, d3.zoomIdentity.scale(0.8)).node(), {updateStyle});      
 }
+
 
 // prepare the data from the database for the use in the graphic
 function prepareStackedBatData(data, mode) {    
