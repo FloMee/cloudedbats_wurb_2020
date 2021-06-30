@@ -167,7 +167,7 @@ class WurbRecManager(object):
                 # Logging.
                 # message = "Rec. restart initiated."
                 # self.wurb_logging.info(message, short_message=message)
-                await self.stop_rec()
+                await self.stop_rec(True)
                 await asyncio.sleep(1.0)
                 await self.start_rec()
         except Exception as e:
